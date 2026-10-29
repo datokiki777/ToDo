@@ -29,8 +29,10 @@
   border-radius: 10px;
   font-weight: 600;
 }
-.button:hover {
-  background: color-mix(in srgb, currentColor 8%, transparent);
+@media (hover: hover) {
+  .button:hover {
+    background: color-mix(in srgb, currentColor 8%, transparent);
+  }
 }
 .danger {
   color: var(--danger);

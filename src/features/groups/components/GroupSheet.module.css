@@ -66,6 +66,8 @@
   padding: 0 16px;
   color: var(--danger);
 }
-.danger:hover {
-  background: color-mix(in srgb, var(--danger) 10%, transparent);
+@media (hover: hover) {
+  .danger:hover {
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
+  }
 }

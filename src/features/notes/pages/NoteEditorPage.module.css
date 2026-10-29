@@ -42,8 +42,10 @@
   border-radius: 10px;
   font-weight: 600;
 }
-.bannerButton:hover {
-  background: color-mix(in srgb, currentColor 10%, transparent);
+@media (hover: hover) {
+  .bannerButton:hover {
+    background: color-mix(in srgb, currentColor 10%, transparent);
+  }
 }
 .danger {
   color: var(--danger);
@@ -115,4 +117,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.bannerSub {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--muted);
 }

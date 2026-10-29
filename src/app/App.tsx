@@ -5,6 +5,7 @@ import { ToastHost } from '@/core/ui/ToastHost';
 import { NoteEditorPage } from '@/features/notes/pages/NoteEditorPage';
 import { NotesPage } from '@/features/notes/pages/NotesPage';
 import { notesRepository } from '@/features/notes/repository';
+import { TRASH_RETENTION_MS } from '@/features/notes/trash';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { AppShell } from './AppShell';
 import { UpdatePrompt } from './UpdatePrompt';
@@ -17,6 +18,16 @@ export default function App() {
     // Ask the browser to keep our data, and tidy blank notes left over from an interrupted session.
     void requestPersistence();
     void notesRepository.purgeEmpty();
+
+    // Trash is kept for a fixed time, then deleted for good. Check on start and whenever the
+    // app returns to the screen (an installed app often stays alive for days).
+    const purgeTrash = () => void notesRepository.purgeExpiredTrash(TRASH_RETENTION_MS);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') purgeTrash();
+    };
+    purgeTrash();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
   return (

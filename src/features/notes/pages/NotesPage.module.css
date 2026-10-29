@@ -90,3 +90,9 @@
   font-weight: 600;
   box-shadow: 0 4px 14px rgb(0 0 0 / 0.14);
 }
+.trashHint {
+  padding: 2px 20px 6px;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}

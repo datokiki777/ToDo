@@ -34,6 +34,8 @@
   border-radius: 12px;
   font-weight: 600;
 }
-.button:hover {
-  background: var(--bg);
+@media (hover: hover) {
+  .button:hover {
+    background: var(--bg);
+  }
 }

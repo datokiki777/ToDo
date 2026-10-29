@@ -34,8 +34,10 @@
   border-radius: 8px;
   text-align: left;
 }
-.item:hover {
-  background: var(--bg);
+@media (hover: hover) {
+  .item:hover {
+    background: var(--bg);
+  }
 }
 .item[aria-checked='true'] {
   background: var(--accent-soft);

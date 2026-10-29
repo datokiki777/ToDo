@@ -15,9 +15,11 @@ interface Props {
   view: ViewMode;
   /** Shown as a small label; pass it only where the group isn't already obvious. */
   group?: Group;
+  /** In the trash: days before it is deleted for good (shown instead of the time). */
+  daysLeft?: number;
 }
 
-export function NoteCard({ note, view, group }: Props) {
+export function NoteCard({ note, view, group, daysLeft }: Props) {
   const { t, i18n } = useTranslation();
   const rawTitle = displayTitle(note);
   const preview = previewLines(note, 4).map((line) => asOnlyLink(line)?.short ?? line);
@@ -61,7 +63,11 @@ export function NoteCard({ note, view, group }: Props) {
             {progress.done}/{progress.total}
           </span>
         )}
-        <time className={styles.date}>{formatShortDate(note.updatedAt, i18n.language)}</time>
+        {daysLeft !== undefined ? (
+          <span className={styles.date}>{t('trash.daysLeft', { count: daysLeft })}</span>
+        ) : (
+          <time className={styles.date}>{formatShortDate(note.updatedAt, i18n.language)}</time>
+        )}
       </div>
     </Link>
     {single && (

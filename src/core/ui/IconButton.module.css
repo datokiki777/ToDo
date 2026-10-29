@@ -7,8 +7,10 @@
   border-radius: 50%;
   color: inherit;
 }
-.button:hover:not(:disabled) {
-  background: color-mix(in srgb, currentColor 10%, transparent);
+@media (hover: hover) {
+  .button:hover:not(:disabled) {
+    background: color-mix(in srgb, currentColor 10%, transparent);
+  }
 }
 .pressed {
   background: color-mix(in srgb, currentColor 16%, transparent);

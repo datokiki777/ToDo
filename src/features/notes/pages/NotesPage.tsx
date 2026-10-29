@@ -30,6 +30,7 @@ import { useListFilters } from '../filters';
 import { useNotes } from '../hooks';
 import type { NoteKind } from '../model';
 import { notesRepository } from '../repository';
+import { TRASH_RETENTION_DAYS, trashDaysLeft } from '../trash';
 import { countNotes, selectNotes, type NotesView } from '../selectors';
 import styles from './NotesPage.module.css';
 
@@ -188,9 +189,11 @@ export function NotesPage({ mode }: { mode: NotesView }) {
         ) : activeGroupId !== null ? (
           <EmptyState icon={<FolderOpen size={28} />} title={t('groups.empty')} hint={t('groups.emptyHint')} />
         ) : (
-          <EmptyState icon={emptyIcon} title={t(copy.empty)} hint={t(copy.hint)} />
+          <EmptyState icon={emptyIcon} title={t(copy.empty)} hint={t(copy.hint, { days: TRASH_RETENTION_DAYS })} />
         )
       ) : (
+        <>
+        {inTrash && <p className={styles.trashHint}>{t('trash.hint', { days: TRASH_RETENTION_DAYS })}</p>}
         <ul className={viewMode === 'grid' ? styles.grid : styles.list}>
           {notes.map((note) => (
             <li key={note.id}>
@@ -198,10 +201,12 @@ export function NotesPage({ mode }: { mode: NotesView }) {
                 note={note}
                 view={viewMode}
                 group={activeGroupId === null && note.groupId ? groupById.get(note.groupId) : undefined}
+                daysLeft={inTrash && note.deletedAt !== null ? trashDaysLeft(note.deletedAt) : undefined}
               />
             </li>
           ))}
         </ul>
+        </>
       )}
 
       {mode === 'active' && (

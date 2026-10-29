@@ -42,7 +42,7 @@
     "emptyArchive": "Archive is empty",
     "emptyArchiveHint": "Notes you archive will show up here.",
     "emptyTrash": "Trash is empty",
-    "emptyTrashHint": "Deleted notes wait here until you restore them.",
+    "emptyTrashHint": "Deleted notes stay here for {{days}} days, then they're deleted for good.",
     "noResults": "Nothing found",
     "noResultsHint": "Try another word or clear the color filter.",
     "pinned": "Pinned",
@@ -59,7 +59,12 @@
     "restore": "Restore",
     "deleteForever": "Delete forever",
     "deleteForeverTitle": "Delete forever?",
-    "deleteForeverBody": "This note can't be restored."
+    "deleteForeverBody": "This note can't be restored.",
+    "hint": "Notes stay in the trash for {{days}} days, then they're deleted for good.",
+    "daysLeft_one": "{{count}} day left",
+    "daysLeft_other": "{{count}} days left",
+    "expires_one": "Deleted for good in {{count}} day",
+    "expires_other": "Deleted for good in {{count}} days"
   },
   "editor": {
     "title": "Title",

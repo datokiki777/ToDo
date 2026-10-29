@@ -29,6 +29,8 @@ export interface NotesRepository {
   deleteForever(id: string): Promise<void>;
   emptyTrash(): Promise<number>;
   purgeEmpty(): Promise<number>;
+  /** Deletes trashed notes that have been in the trash longer than `retentionMs`. */
+  purgeExpiredTrash(retentionMs: number): Promise<number>;
   deleteIfEmpty(id: string): Promise<boolean>;
   importMany(notes: Note[]): Promise<ImportResult>;
 }
@@ -97,6 +99,17 @@ export function createNotesRepository(
       return db.transaction('rw', db.notes, async () => {
         const ids = (await db.notes.toArray())
           .filter((note) => note.deletedAt !== null)
+          .map((note) => note.id);
+        await db.notes.bulkDelete(ids);
+        return ids.length;
+      });
+    },
+
+    async purgeExpiredTrash(retentionMs) {
+      const cutoff = now() - retentionMs;
+      return db.transaction('rw', db.notes, async () => {
+        const ids = (await db.notes.toArray())
+          .filter((note) => note.deletedAt !== null && note.deletedAt <= cutoff)
           .map((note) => note.id);
         await db.notes.bulkDelete(ids);
         return ids.length;

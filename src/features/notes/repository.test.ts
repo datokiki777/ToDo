@@ -100,3 +100,26 @@ describe('deleteIfEmpty', () => {
     expect(await repo.deleteIfEmpty('missing')).toBe(false);
   });
 });
+
+describe('purgeExpiredTrash', () => {
+  it('deletes only notes trashed longer ago than the retention time', async () => {
+    const DAY = 86_400_000;
+    const old = await repo.create();
+    const recent = await repo.create();
+    const live = await repo.create();
+    await repo.update(old.id, { body: 'old' });
+    await repo.update(recent.id, { body: 'recent' });
+    await repo.update(live.id, { body: 'live' });
+
+    const start = clock;
+    await repo.moveToTrash(old.id); // trashed at ~start
+    clock = start + 20 * DAY;
+    await repo.moveToTrash(recent.id); // trashed 20 days later
+    clock = start + 31 * DAY; // "now": old is 31 days in the trash, recent only 11
+
+    expect(await repo.purgeExpiredTrash(30 * DAY)).toBe(1);
+    expect(await repo.get(old.id)).toBeUndefined();
+    expect(await repo.get(recent.id)).toBeDefined();
+    expect(await repo.get(live.id)).toBeDefined(); // never touches notes that are not in the trash
+  });
+});

@@ -70,7 +70,9 @@
   border-radius: 16px;
   color: var(--muted);
 }
-.add:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+@media (hover: hover) {
+  .add:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
 }

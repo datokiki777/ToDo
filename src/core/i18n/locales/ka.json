@@ -42,7 +42,7 @@
     "emptyArchive": "არქივი ცარიელია",
     "emptyArchiveHint": "აქ გამოჩნდება ნოტები, რომლებიც დაარქივე.",
     "emptyTrash": "ნაგავი ცარიელია",
-    "emptyTrashHint": "წაშლილი ნოტები აქ დაელოდება აღდგენას.",
+    "emptyTrashHint": "წაშლილი ნოტები აქ {{days}} დღე ინახება და შემდეგ სამუდამოდ იშლება.",
     "noResults": "ვერაფერი მოიძებნა",
     "noResultsHint": "სცადე სხვა სიტყვა ან მოხსენი ფერის ფილტრი.",
     "pinned": "მიმაგრებულია",
@@ -59,7 +59,12 @@
     "restore": "აღდგენა",
     "deleteForever": "სამუდამოდ წაშლა",
     "deleteForeverTitle": "სამუდამოდ წაშლა?",
-    "deleteForeverBody": "ნოტა ვეღარ აღდგება."
+    "deleteForeverBody": "ნოტა ვეღარ აღდგება.",
+    "hint": "ნაგავში ნოტები {{days}} დღე ინახება, შემდეგ სამუდამოდ იშლება.",
+    "daysLeft_one": "დარჩა {{count}} დღე",
+    "daysLeft_other": "დარჩა {{count}} დღე",
+    "expires_one": "სამუდამოდ წაიშლება {{count}} დღეში",
+    "expires_other": "სამუდამოდ წაიშლება {{count}} დღეში"
   },
   "editor": {
     "title": "სათაური",

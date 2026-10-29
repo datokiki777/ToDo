@@ -31,6 +31,7 @@ import { ColorPicker } from '../components/ColorPicker';
 import { useNote } from '../hooks';
 import { convertKind, isNoteEmpty, type Note, type NoteColor, type NoteContent } from '../model';
 import { notesRepository } from '../repository';
+import { trashDaysLeft } from '../trash';
 import { useAutosave } from '../useAutosave';
 import styles from './NoteEditorPage.module.css';
 
@@ -159,7 +160,7 @@ function Editor({ note }: { note: Note }) {
               disabled={note.archived}
               onClick={togglePin}
             >
-              <Pin size={22} />
+              <Pin size={22} fill={note.pinned ? 'currentColor' : 'none'} />
             </IconButton>
             <IconButton
               label={draft.kind === 'text' ? t('editor.toChecklist') : t('editor.toText')}
@@ -182,7 +183,12 @@ function Editor({ note }: { note: Note }) {
 
       {trashed && (
         <div className={styles.banner} role="status">
-          <span className={styles.bannerText}>{t('trash.inTrash')}</span>
+          <span className={styles.bannerText}>
+            {t('trash.inTrash')}
+            {note.deletedAt !== null && (
+              <span className={styles.bannerSub}>{t('trash.expires', { count: trashDaysLeft(note.deletedAt) })}</span>
+            )}
+          </span>
           <button type="button" className={styles.bannerButton} onClick={() => void restore()}>
             <RotateCcw size={18} />
             {t('trash.restore')}
