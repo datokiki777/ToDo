@@ -35,6 +35,8 @@ export interface Note {
   body: string;
   items: ChecklistItem[];
   color: NoteColor;
+  /** Which group the note belongs to; null = no group. */
+  groupId: string | null;
   pinned: boolean;
   archived: boolean;
   createdAt: number;
@@ -160,6 +162,7 @@ export function parseNote(raw: unknown): Note | null {
     body: kind === 'text' && typeof r.body === 'string' ? r.body : '',
     items,
     color: isNoteColor(r.color) ? r.color : DEFAULT_COLOR,
+    groupId: typeof r.groupId === 'string' && r.groupId !== '' ? r.groupId : null,
     pinned: r.pinned === true,
     archived: r.archived === true,
     createdAt: finiteNumber(r.createdAt) ?? updatedAt,

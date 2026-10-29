@@ -3,15 +3,19 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { formatShortDate } from '@/core/time';
 import type { ViewMode } from '@/core/settings/store';
+import { GroupIcon } from '@/features/groups/icons';
+import type { Group } from '@/features/groups/model';
 import { checklistProgress, displayTitle, previewLines, type Note } from '../model';
 import styles from './NoteCard.module.css';
 
 interface Props {
   note: Note;
   view: ViewMode;
+  /** Shown as a small label; pass it only where the group isn't already obvious. */
+  group?: Group;
 }
 
-export function NoteCard({ note, view }: Props) {
+export function NoteCard({ note, view, group }: Props) {
   const { t, i18n } = useTranslation();
   const title = displayTitle(note);
   const preview = previewLines(note, view === 'grid' ? 4 : 2);
@@ -35,6 +39,12 @@ export function NoteCard({ note, view }: Props) {
         </div>
       )}
       <div className={styles.foot}>
+        {group && (
+          <span className={styles.group}>
+            <GroupIcon name={group.icon} size={13} />
+            <span className={styles.groupName}>{group.name}</span>
+          </span>
+        )}
         {progress && progress.total > 0 && (
           <span className={styles.progress}>
             {progress.done}/{progress.total}

@@ -2,6 +2,8 @@ import {
   Archive,
   ArchiveRestore,
   ArrowLeft,
+  ChevronDown,
+  FolderOpen,
   ListChecks,
   Pin,
   RotateCcw,
@@ -16,6 +18,11 @@ import { formatLongDate } from '@/core/time';
 import { ConfirmDialog } from '@/core/ui/ConfirmDialog';
 import { IconButton } from '@/core/ui/IconButton';
 import { useToasts } from '@/core/ui/toasts';
+import { GroupPickerSheet } from '@/features/groups/components/GroupPickerSheet';
+import { GroupSheet, type GroupValues } from '@/features/groups/components/GroupSheet';
+import { useGroups } from '@/features/groups/hooks';
+import { GroupIcon } from '@/features/groups/icons';
+import { groupsRepository } from '@/features/groups/repository';
 import { AutoTextarea } from '../components/AutoTextarea';
 import { ChecklistEditor } from '../components/ChecklistEditor';
 import { ColorPicker } from '../components/ColorPicker';
@@ -53,6 +60,9 @@ function Editor({ note }: { note: Note }) {
     withBlankRow({ kind: note.kind, title: note.title, body: note.body, items: note.items }),
   );
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [sheet, setSheet] = useState<'pick' | 'create' | null>(null);
+  const groups = useGroups();
+  const group = groups?.find((g) => g.id === note.groupId) ?? null;
   const startedEmpty = useMemo(() => isNoteEmpty(note), [note.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const flush = useAutosave(note.id, draft, !trashed);
@@ -85,6 +95,16 @@ function Editor({ note }: { note: Note }) {
     setDraft((d) => withBlankRow(convertKind(d, d.kind === 'text' ? 'checklist' : 'text')));
 
   const setColor = (color: NoteColor) => void notesRepository.update(note.id, { color });
+
+  const setGroup = (groupId: string | null) => {
+    setSheet(null);
+    void notesRepository.update(note.id, { groupId });
+  };
+
+  const createGroup = async (values: GroupValues) => {
+    const created = await groupsRepository.create(values);
+    setGroup(created.id);
+  };
 
   const togglePin = () => void notesRepository.update(note.id, { pinned: !note.pinned });
 
@@ -175,6 +195,17 @@ function Editor({ note }: { note: Note }) {
       )}
 
       <div className={styles.content} ref={contentRef}>
+        <button
+          type="button"
+          className={styles.groupChip}
+          disabled={trashed}
+          aria-label={t('groups.choose')}
+          onClick={() => setSheet('pick')}
+        >
+          {group ? <GroupIcon name={group.icon} size={16} /> : <FolderOpen size={16} aria-hidden="true" />}
+          <span className={styles.groupName}>{group ? group.name : t('groups.noGroup')}</span>
+          {!trashed && <ChevronDown size={16} aria-hidden="true" />}
+        </button>
         <AutoTextarea
           className={styles.title}
           value={draft.title}
@@ -214,6 +245,21 @@ function Editor({ note }: { note: Note }) {
         </time>
         <ColorPicker value={note.color} onChange={setColor} disabled={trashed} />
       </footer>
+
+      <GroupPickerSheet
+        open={sheet === 'pick'}
+        groups={groups ?? []}
+        value={note.groupId}
+        onSelect={setGroup}
+        onCreate={() => setSheet('create')}
+        onClose={() => setSheet(null)}
+      />
+      <GroupSheet
+        open={sheet === 'create'}
+        group={null}
+        onClose={() => setSheet(null)}
+        onSave={createGroup}
+      />
 
       <ConfirmDialog
         open={confirmDelete}

@@ -1,6 +1,16 @@
 {
-  "nav": { "notes": "Notes", "archive": "Archive", "trash": "Trash", "settings": "Settings" },
-  "common": { "cancel": "Cancel", "undo": "Undo", "close": "Close", "back": "Back" },
+  "nav": {
+    "notes": "Notes",
+    "archive": "Archive",
+    "trash": "Trash",
+    "settings": "Settings"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "undo": "Undo",
+    "close": "Close",
+    "back": "Back"
+  },
   "colors": {
     "yellow": "Yellow",
     "red": "Red",
@@ -35,7 +45,8 @@
     "emptyTrashHint": "Deleted notes wait here until you restore them.",
     "noResults": "Nothing found",
     "noResultsHint": "Try another word or clear the color filter.",
-    "pinned": "Pinned"
+    "pinned": "Pinned",
+    "filterByColor": "Filter by color"
   },
   "trash": {
     "empty": "Empty trash",
@@ -103,5 +114,24 @@
     "updateReady": "A new version is ready",
     "update": "Update",
     "offlineReady": "The app now works offline"
+  },
+  "groups": {
+    "title": "Groups",
+    "all": "All",
+    "new": "New group",
+    "edit": "Edit group",
+    "name": "Name",
+    "namePlaceholder": "e.g. Work",
+    "icon": "Icon",
+    "color": "Color",
+    "save": "Save",
+    "delete": "Delete group",
+    "deleteTitle": "Delete “{{name}}”?",
+    "deleteBody": "The notes aren't deleted. They just stay without a group.",
+    "deleted": "Group “{{name}}” deleted",
+    "noGroup": "No group",
+    "choose": "Choose a group",
+    "empty": "No notes in this group yet",
+    "emptyHint": "Tap + and the new note will be created in this group."
   }
 }

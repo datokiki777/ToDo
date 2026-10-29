@@ -9,7 +9,7 @@ import {
   previewLines,
   type Note,
 } from './model';
-import { selectNotes } from './selectors';
+import { countNotes, selectNotes } from './selectors';
 
 function note(partial: Partial<Note> = {}): Note {
   return {
@@ -19,6 +19,7 @@ function note(partial: Partial<Note> = {}): Note {
     body: '',
     items: [],
     color: 'yellow',
+    groupId: null,
     pinned: false,
     archived: false,
     createdAt: 1,
@@ -117,7 +118,7 @@ describe('model', () => {
 });
 
 describe('selectNotes', () => {
-  const base = { query: '', color: null, sortBy: 'date' } as const;
+  const base = { query: '', color: null, groupId: null, sortBy: 'date' } as const;
   const a = note({ id: 'a', body: 'a', updatedAt: 10, color: 'blue' });
   const b = note({ id: 'b', body: 'b', updatedAt: 30, color: 'red' });
   const c = note({ id: 'c', body: 'c', updatedAt: 20, color: 'blue', pinned: true });
@@ -167,9 +168,49 @@ describe('blank notes are not listed', () => {
   it('hides blank notes in active and archive but not in trash', () => {
     const blank = note({ id: 'blank' });
     const blankTrashed = note({ id: 'blank-trash', deletedAt: 5 });
-    const q = { query: '', color: null, sortBy: 'date' } as const;
+    const q = { query: '', color: null, groupId: null, sortBy: 'date' } as const;
     expect(selectNotes([blank], { ...q, view: 'active' })).toEqual([]);
     expect(selectNotes([{ ...blank, archived: true }], { ...q, view: 'archive' })).toEqual([]);
     expect(selectNotes([blankTrashed], { ...q, view: 'trash' })).toHaveLength(1);
+  });
+});
+
+describe('groups in lists', () => {
+  const q = { query: '', color: null, sortBy: 'date' } as const;
+  const inA = note({ id: 'a1', body: 'a', groupId: 'A', updatedAt: 3 });
+  const inA2 = note({ id: 'a2', body: 'a', groupId: 'A', updatedAt: 2 });
+  const inB = note({ id: 'b1', body: 'b', groupId: 'B', updatedAt: 1 });
+  const none = note({ id: 'n1', body: 'n', updatedAt: 4 });
+  const archivedA = note({ id: 'a3', body: 'a', groupId: 'A', archived: true });
+  const all = [inA, inA2, inB, none, archivedA];
+
+  it('shows only the chosen group, or everything when none is chosen', () => {
+    expect(selectNotes(all, { ...q, view: 'active', groupId: 'A' }).map((n) => n.id)).toEqual(['a1', 'a2']);
+    expect(selectNotes(all, { ...q, view: 'active', groupId: null }).map((n) => n.id)).toEqual([
+      'n1',
+      'a1',
+      'a2',
+      'b1',
+    ]);
+  });
+
+  it('combines group with colour and search', () => {
+    const red = note({ id: 'r', body: 'milk', groupId: 'A', color: 'red' });
+    expect(selectNotes([inA, red], { ...q, view: 'active', groupId: 'A', color: 'red' }).map((n) => n.id)).toEqual(['r']);
+    expect(selectNotes([inA, red], { ...q, view: 'active', groupId: 'A', query: 'milk', color: null }).map((n) => n.id)).toEqual(['r']);
+  });
+
+  it('counts per group for the cards, per view', () => {
+    const active = countNotes(all, 'active');
+    expect(active.total).toBe(4);
+    expect(active.byGroup.get('A')).toBe(2);
+    expect(active.byGroup.get('B')).toBe(1);
+    expect(countNotes(all, 'archive').byGroup.get('A')).toBe(1);
+  });
+
+  it('parses groupId from backups, defaulting to no group', () => {
+    expect(parseNote({ id: 'x', updatedAt: 1, groupId: 'G' })?.groupId).toBe('G');
+    expect(parseNote({ id: 'x', updatedAt: 1 })?.groupId).toBeNull();
+    expect(parseNote({ id: 'x', updatedAt: 1, groupId: 5 })?.groupId).toBeNull();
   });
 });

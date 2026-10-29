@@ -12,7 +12,7 @@
   top: 100%;
   right: 0;
   z-index: 11;
-  min-width: 200px;
+  width: min(300px, calc(100vw - 16px));
   padding: 6px;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -41,4 +41,8 @@
   background: var(--accent-soft);
   color: var(--accent);
   font-weight: 700;
+}
+.colors {
+  --cf-target: 31px;
+  padding: 0 0 2px 2px;
 }

@@ -60,3 +60,20 @@
   font-weight: 600;
   color: var(--ink);
 }
+.group {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  margin-right: auto;
+  color: var(--muted);
+}
+.group svg {
+  flex: none;
+}
+.groupName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 11ch;
+}

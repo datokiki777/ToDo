@@ -3,9 +3,16 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IconButton } from '@/core/ui/IconButton';
 import { useSettings } from '@/core/settings/store';
+import type { NoteColor } from '../model';
+import { ColorFilter } from './ColorFilter';
 import styles from './ListOptionsMenu.module.css';
 
-export function ListOptionsMenu() {
+interface Props {
+  color: NoteColor | null;
+  onColorChange: (color: NoteColor | null) => void;
+}
+
+export function ListOptionsMenu({ color, onColorChange }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const sortBy = useSettings((s) => s.sortBy);
@@ -20,7 +27,11 @@ export function ListOptionsMenu() {
 
   return (
     <div className={styles.wrap}>
-      <IconButton label={t('list.sortAndView')} pressed={open} onClick={() => setOpen((v) => !v)}>
+      <IconButton
+        label={t('list.sortAndView')}
+        pressed={open || color !== null}
+        onClick={() => setOpen((v) => !v)}
+      >
         <SlidersHorizontal size={22} />
       </IconButton>
       {open && (
@@ -32,6 +43,10 @@ export function ListOptionsMenu() {
             onClick={() => setOpen(false)}
           />
           <div className={styles.menu} role="menu">
+            <p className={styles.heading}>{t('list.filterByColor')}</p>
+            <div className={styles.colors}>
+              <ColorFilter value={color} onChange={onColorChange} />
+            </div>
             <p className={styles.heading}>{t('list.sortBy')}</p>
             <button
               type="button"

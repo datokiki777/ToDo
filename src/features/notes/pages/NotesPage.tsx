@@ -1,4 +1,15 @@
-import { Archive, ListChecks, Plus, Search, StickyNote, Trash2, Type, X } from 'lucide-react';
+import {
+  Archive,
+  FolderOpen,
+  ListChecks,
+  Pencil,
+  Plus,
+  Search,
+  StickyNote,
+  Trash2,
+  Type,
+  X,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -8,13 +19,18 @@ import { EmptyState } from '@/core/ui/EmptyState';
 import { IconButton } from '@/core/ui/IconButton';
 import { PageHeader } from '@/core/ui/PageHeader';
 import { useToasts } from '@/core/ui/toasts';
-import { ColorFilter } from '../components/ColorFilter';
+import { GroupSheet, type GroupValues } from '@/features/groups/components/GroupSheet';
+import { GroupStrip } from '@/features/groups/components/GroupStrip';
+import { useGroups } from '@/features/groups/hooks';
+import type { Group } from '@/features/groups/model';
+import { groupsRepository } from '@/features/groups/repository';
 import { ListOptionsMenu } from '../components/ListOptionsMenu';
 import { NoteCard } from '../components/NoteCard';
+import { useListFilters } from '../filters';
 import { useNotes } from '../hooks';
-import type { NoteColor, NoteKind } from '../model';
+import type { NoteKind } from '../model';
 import { notesRepository } from '../repository';
-import { selectNotes, type NotesView } from '../selectors';
+import { countNotes, selectNotes, type NotesView } from '../selectors';
 import styles from './NotesPage.module.css';
 
 const COPY = {
@@ -28,25 +44,45 @@ export function NotesPage({ mode }: { mode: NotesView }) {
   const navigate = useNavigate();
   const showToast = useToasts((s) => s.show);
   const all = useNotes();
+  const groups = useGroups();
   const viewMode = useSettings((s) => s.viewMode);
   const sortBy = useSettings((s) => s.sortBy);
+  const { groupId, color, setGroupId, setColor } = useListFilters();
 
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
-  const [color, setColor] = useState<NoteColor | null>(null);
   const [fabOpen, setFabOpen] = useState(false);
   const [confirmEmpty, setConfirmEmpty] = useState(false);
+  const [groupSheet, setGroupSheet] = useState<{ group: Group | null } | null>(null);
+  const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
 
+  const inTrash = mode === 'trash';
+  // A remembered group that no longer exists counts as "all". This is computed, not written back,
+  // so a group that was just created can never be wrongly dropped before the list catches up.
+  const groupMissing = groupId !== null && groups !== undefined && !groups.some((g) => g.id === groupId);
+  const activeGroupId = inTrash || groupMissing ? null : groupId;
+  const activeColor = inTrash ? null : color;
+  const selectedGroup = groups?.find((g) => g.id === activeGroupId) ?? null;
+  const groupById = useMemo(() => new Map((groups ?? []).map((g) => [g.id, g])), [groups]);
+
+  const counts = useMemo(() => (all ? countNotes(all, mode) : null), [all, mode]);
   const notes = useMemo(
-    () => (all ? selectNotes(all, { view: mode, query, color, sortBy }) : null),
-    [all, mode, query, color, sortBy],
+    () =>
+      all
+        ? selectNotes(all, { view: mode, query, color: activeColor, groupId: activeGroupId, sortBy })
+        : null,
+    [all, mode, query, activeColor, activeGroupId, sortBy],
   );
-  const filtering = query.trim() !== '' || color !== null;
+  const searchOrColor = query.trim() !== '' || activeColor !== null;
   const copy = COPY[mode];
 
   const create = async (kind: NoteKind) => {
     setFabOpen(false);
-    const note = await notesRepository.create({ kind, color: color ?? undefined });
+    const note = await notesRepository.create({
+      kind,
+      color: activeColor ?? undefined,
+      groupId: activeGroupId,
+    });
     navigate(`/note/${note.id}`);
   };
 
@@ -61,6 +97,26 @@ export function NotesPage({ mode }: { mode: NotesView }) {
     showToast(t('trash.emptied', { count }));
   };
 
+  const saveGroup = async (values: GroupValues) => {
+    const editing = groupSheet?.group ?? null;
+    setGroupSheet(null);
+    if (editing) {
+      await groupsRepository.update(editing.id, values);
+    } else {
+      const created = await groupsRepository.create(values);
+      setGroupId(created.id);
+    }
+  };
+
+  const deleteGroup = async () => {
+    const group = groupToDelete;
+    setGroupToDelete(null);
+    if (!group) return;
+    await groupsRepository.remove(group.id);
+    if (groupId === group.id) setGroupId(null);
+    showToast(t('groups.deleted', { name: group.name }));
+  };
+
   const actions = (
     <>
       <IconButton
@@ -70,14 +126,22 @@ export function NotesPage({ mode }: { mode: NotesView }) {
       >
         <Search size={22} />
       </IconButton>
-      {mode === 'trash' && notes && notes.length > 0 && !filtering && (
+      {selectedGroup && (
+        <IconButton label={t('groups.edit')} onClick={() => setGroupSheet({ group: selectedGroup })}>
+          <Pencil size={21} />
+        </IconButton>
+      )}
+      {inTrash && notes && notes.length > 0 && !searchOrColor && (
         <IconButton label={t('trash.empty')} onClick={() => setConfirmEmpty(true)}>
           <Trash2 size={22} />
         </IconButton>
       )}
-      {mode !== 'trash' && <ListOptionsMenu />}
+      {!inTrash && <ListOptionsMenu color={color} onColorChange={setColor} />}
     </>
   );
+
+  const emptyIcon =
+    mode === 'archive' ? <Archive size={28} /> : inTrash ? <Trash2 size={28} /> : <StickyNote size={28} />;
 
   return (
     <>
@@ -107,24 +171,34 @@ export function NotesPage({ mode }: { mode: NotesView }) {
             )}
           </div>
         )}
-        {mode !== 'trash' && <ColorFilter value={color} onChange={setColor} />}
+        {!inTrash && groups && counts && (
+          <GroupStrip
+            groups={groups}
+            counts={counts}
+            selected={activeGroupId}
+            onSelect={setGroupId}
+            onAdd={() => setGroupSheet({ group: null })}
+          />
+        )}
       </PageHeader>
 
       {notes === null ? null : notes.length === 0 ? (
-        filtering ? (
+        searchOrColor ? (
           <EmptyState icon={<Search size={28} />} title={t('list.noResults')} hint={t('list.noResultsHint')} />
+        ) : activeGroupId !== null ? (
+          <EmptyState icon={<FolderOpen size={28} />} title={t('groups.empty')} hint={t('groups.emptyHint')} />
         ) : (
-          <EmptyState
-            icon={mode === 'archive' ? <Archive size={28} /> : mode === 'trash' ? <Trash2 size={28} /> : <StickyNote size={28} />}
-            title={t(copy.empty)}
-            hint={t(copy.hint)}
-          />
+          <EmptyState icon={emptyIcon} title={t(copy.empty)} hint={t(copy.hint)} />
         )
       ) : (
         <ul className={viewMode === 'grid' ? styles.grid : styles.list}>
           {notes.map((note) => (
             <li key={note.id}>
-              <NoteCard note={note} view={viewMode} />
+              <NoteCard
+                note={note}
+                view={viewMode}
+                group={activeGroupId === null && note.groupId ? groupById.get(note.groupId) : undefined}
+              />
             </li>
           ))}
         </ul>
@@ -161,6 +235,30 @@ export function NotesPage({ mode }: { mode: NotesView }) {
           </button>
         </div>
       )}
+
+      <GroupSheet
+        open={groupSheet !== null}
+        group={groupSheet?.group ?? null}
+        onClose={() => setGroupSheet(null)}
+        onSave={saveGroup}
+        onDelete={
+          groupSheet?.group
+            ? () => {
+                setGroupToDelete(groupSheet.group);
+                setGroupSheet(null);
+              }
+            : undefined
+        }
+      />
+
+      <ConfirmDialog
+        open={groupToDelete !== null}
+        title={t('groups.deleteTitle', { name: groupToDelete?.name ?? '' })}
+        message={t('groups.deleteBody')}
+        confirmLabel={t('groups.delete')}
+        onConfirm={() => void deleteGroup()}
+        onCancel={() => setGroupToDelete(null)}
+      />
 
       <ConfirmDialog
         open={confirmEmpty}

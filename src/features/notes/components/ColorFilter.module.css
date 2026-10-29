@@ -12,7 +12,7 @@
   display: grid;
   place-items: center;
   flex: none;
-  width: 40px;
+  width: var(--cf-target, 40px);
   height: var(--tap);
 }
 .dot {

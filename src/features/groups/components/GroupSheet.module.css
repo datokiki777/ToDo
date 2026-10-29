@@ -1,0 +1,71 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.input {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  outline: none;
+}
+.input:focus {
+  border-color: var(--accent);
+}
+.icons {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+.iconButton {
+  display: grid;
+  place-items: center;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--muted);
+}
+.iconOn {
+  background: var(--note-bg);
+  color: var(--note-accent);
+  outline: 2px solid var(--note-accent);
+  outline-offset: -2px;
+}
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.button {
+  flex: 1;
+  min-height: 48px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.primary:disabled {
+  opacity: 0.4;
+}
+.danger {
+  flex: 0 1 auto;
+  padding: 0 16px;
+  color: var(--danger);
+}
+.danger:hover {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}

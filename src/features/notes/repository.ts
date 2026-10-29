@@ -9,7 +9,7 @@ import {
 } from './model';
 
 export type NotePatch = Partial<
-  Pick<Note, 'kind' | 'title' | 'body' | 'items' | 'color' | 'pinned' | 'archived'>
+  Pick<Note, 'kind' | 'title' | 'body' | 'items' | 'color' | 'groupId' | 'pinned' | 'archived'>
 >;
 
 export interface ImportResult {
@@ -21,7 +21,7 @@ export interface ImportResult {
 export interface NotesRepository {
   getAll(): Promise<Note[]>;
   get(id: string): Promise<Note | undefined>;
-  create(input?: { kind?: NoteKind; color?: NoteColor }): Promise<Note>;
+  create(input?: { kind?: NoteKind; color?: NoteColor; groupId?: string | null }): Promise<Note>;
   update(id: string, patch: NotePatch): Promise<void>;
   setArchived(id: string, archived: boolean): Promise<void>;
   moveToTrash(id: string): Promise<void>;
@@ -55,6 +55,7 @@ export function createNotesRepository(
         body: '',
         items: [],
         color: input.color ?? DEFAULT_COLOR,
+        groupId: input.groupId ?? null,
         pinned: false,
         archived: false,
         createdAt: t,

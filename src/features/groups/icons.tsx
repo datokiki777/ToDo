@@ -1,0 +1,60 @@
+import {
+  BookOpen,
+  Briefcase,
+  Building2,
+  Camera,
+  Car,
+  Dumbbell,
+  Folder,
+  Gift,
+  GraduationCap,
+  Heart,
+  House,
+  Leaf,
+  Lightbulb,
+  Mail,
+  Music,
+  Phone,
+  Plane,
+  ShoppingCart,
+  Star,
+  Tag,
+  Users,
+  Utensils,
+  Wallet,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react';
+import type { GroupIconName } from './model';
+
+const ICONS: Record<GroupIconName, LucideIcon> = {
+  folder: Folder,
+  briefcase: Briefcase,
+  home: House,
+  cart: ShoppingCart,
+  heart: Heart,
+  star: Star,
+  book: BookOpen,
+  school: GraduationCap,
+  car: Car,
+  plane: Plane,
+  wallet: Wallet,
+  dumbbell: Dumbbell,
+  food: Utensils,
+  music: Music,
+  camera: Camera,
+  gift: Gift,
+  wrench: Wrench,
+  building: Building2,
+  users: Users,
+  phone: Phone,
+  mail: Mail,
+  idea: Lightbulb,
+  tag: Tag,
+  leaf: Leaf,
+};
+
+export function GroupIcon({ name, size = 20 }: { name: GroupIconName; size?: number }) {
+  const Icon = ICONS[name] ?? Folder;
+  return <Icon size={size} aria-hidden="true" />;
+}
