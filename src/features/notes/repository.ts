@@ -29,6 +29,7 @@ export interface NotesRepository {
   deleteForever(id: string): Promise<void>;
   emptyTrash(): Promise<number>;
   purgeEmpty(): Promise<number>;
+  deleteIfEmpty(id: string): Promise<boolean>;
   importMany(notes: Note[]): Promise<ImportResult>;
 }
 
@@ -109,6 +110,16 @@ export function createNotesRepository(
           .map((note) => note.id);
         await db.notes.bulkDelete(ids);
         return ids.length;
+      });
+    },
+
+    /** Delete one note only if it is blank right now (checked and deleted in one transaction). */
+    async deleteIfEmpty(id) {
+      return db.transaction('rw', db.notes, async () => {
+        const note = await db.notes.get(id);
+        if (!note || note.deletedAt !== null || !isNoteEmpty(note)) return false;
+        await db.notes.delete(id);
+        return true;
       });
     },
 

@@ -1,5 +1,5 @@
 import { Archive, ListChecks, Plus, Search, StickyNote, Trash2, Type, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '@/core/settings/store';
@@ -36,10 +36,6 @@ export function NotesPage({ mode }: { mode: NotesView }) {
   const [color, setColor] = useState<NoteColor | null>(null);
   const [fabOpen, setFabOpen] = useState(false);
   const [confirmEmpty, setConfirmEmpty] = useState(false);
-
-  useEffect(() => {
-    if (mode === 'active') void notesRepository.purgeEmpty();
-  }, [mode]);
 
   const notes = useMemo(
     () => (all ? selectNotes(all, { view: mode, query, color, sortBy }) : null),

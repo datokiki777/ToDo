@@ -4,7 +4,8 @@ import { notesRepository } from './repository';
 
 /**
  * Saves the editor's draft shortly after typing stops, and always when the page is hidden or the
- * editor closes, so a note is never lost to a quick app switch. Returns `flush` for explicit saves.
+ * editor closes, so a note is never lost to a quick app switch. Returns `flush`: call it and await
+ * the result to be sure everything typed so far has reached the database.
  */
 export function useAutosave(id: string, draft: NoteContent, enabled: boolean, delayMs = 400) {
   const latest = useRef(draft);
@@ -12,15 +13,22 @@ export function useAutosave(id: string, draft: NoteContent, enabled: boolean, de
   const saved = useRef<string | null>(null);
   if (saved.current === null) saved.current = JSON.stringify(contentForSave(draft));
   const timer = useRef<number | undefined>(undefined);
+  // Saves run one after another; every `flush` resolves only when all saves so far are written.
+  const queue = useRef<Promise<void>>(Promise.resolve());
 
-  const flush = useCallback(async () => {
+  const flush = useCallback((): Promise<void> => {
     window.clearTimeout(timer.current);
-    if (!enabled) return;
-    const patch = contentForSave(latest.current);
-    const snapshot = JSON.stringify(patch);
-    if (snapshot === saved.current) return;
-    saved.current = snapshot;
-    await notesRepository.update(id, patch);
+    if (enabled) {
+      const patch = contentForSave(latest.current);
+      const snapshot = JSON.stringify(patch);
+      if (snapshot !== saved.current) {
+        saved.current = snapshot;
+        queue.current = queue.current
+          .then(() => notesRepository.update(id, patch))
+          .catch((error: unknown) => console.error('Saving the note failed', error));
+      }
+    }
+    return queue.current;
   }, [id, enabled]);
 
   useEffect(() => {

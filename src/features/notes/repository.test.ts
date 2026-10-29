@@ -81,3 +81,22 @@ describe('notes repository', () => {
     expect((await repo.get(local.id))!.title).toBe('newer');
   });
 });
+
+describe('deleteIfEmpty', () => {
+  it('deletes only blank, live notes', async () => {
+    const blank = await repo.create();
+    expect(await repo.deleteIfEmpty(blank.id)).toBe(true);
+    expect(await repo.get(blank.id)).toBeUndefined();
+
+    const written = await repo.create();
+    await repo.update(written.id, { body: 'x' });
+    expect(await repo.deleteIfEmpty(written.id)).toBe(false);
+    expect(await repo.get(written.id)).toBeDefined();
+
+    const trashedBlank = await repo.create();
+    await repo.moveToTrash(trashedBlank.id);
+    expect(await repo.deleteIfEmpty(trashedBlank.id)).toBe(false);
+
+    expect(await repo.deleteIfEmpty('missing')).toBe(false);
+  });
+});

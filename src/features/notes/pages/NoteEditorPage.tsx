@@ -8,7 +8,7 @@ import {
   Trash2,
   Type,
 } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { newId } from '@/core/id';
@@ -56,6 +56,22 @@ function Editor({ note }: { note: Note }) {
   const startedEmpty = useMemo(() => isNoteEmpty(note), [note.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const flush = useAutosave(note.id, draft, !trashed);
+
+  // When the editor closes (back button, system back, anything): wait for the final save, then
+  // remove the note if it is still blank. The deferred check skips React's dev-only fake unmount.
+  const mounted = useRef(false);
+  const flushRef = useRef(flush);
+  flushRef.current = flush;
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      window.setTimeout(() => {
+        if (mounted.current) return;
+        void flushRef.current().then(() => notesRepository.deleteIfEmpty(note.id));
+      }, 0);
+    };
+  }, [note.id]);
 
   const goBack = () => {
     if (location.key !== 'default') navigate(-1);

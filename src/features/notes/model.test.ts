@@ -118,11 +118,11 @@ describe('model', () => {
 
 describe('selectNotes', () => {
   const base = { query: '', color: null, sortBy: 'date' } as const;
-  const a = note({ id: 'a', updatedAt: 10, color: 'blue' });
-  const b = note({ id: 'b', updatedAt: 30, color: 'red' });
-  const c = note({ id: 'c', updatedAt: 20, color: 'blue', pinned: true });
-  const arch = note({ id: 'arch', archived: true });
-  const trash = note({ id: 'trash', deletedAt: 99 });
+  const a = note({ id: 'a', body: 'a', updatedAt: 10, color: 'blue' });
+  const b = note({ id: 'b', body: 'b', updatedAt: 30, color: 'red' });
+  const c = note({ id: 'c', body: 'c', updatedAt: 20, color: 'blue', pinned: true });
+  const arch = note({ id: 'arch', body: 'arch', archived: true });
+  const trash = note({ id: 'trash', body: 'trash', deletedAt: 99 });
   const all = [a, b, c, arch, trash];
 
   it('separates active, archive and trash', () => {
@@ -160,5 +160,16 @@ describe('contentForSave', () => {
     });
     expect(saved.items.map((i) => i.id)).toEqual(['1', '3']);
     expect(saved.items[0]?.done).toBe(true);
+  });
+});
+
+describe('blank notes are not listed', () => {
+  it('hides blank notes in active and archive but not in trash', () => {
+    const blank = note({ id: 'blank' });
+    const blankTrashed = note({ id: 'blank-trash', deletedAt: 5 });
+    const q = { query: '', color: null, sortBy: 'date' } as const;
+    expect(selectNotes([blank], { ...q, view: 'active' })).toEqual([]);
+    expect(selectNotes([{ ...blank, archived: true }], { ...q, view: 'archive' })).toEqual([]);
+    expect(selectNotes([blankTrashed], { ...q, view: 'trash' })).toHaveLength(1);
   });
 });

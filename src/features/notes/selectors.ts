@@ -1,4 +1,4 @@
-import { matchesQuery, NOTE_COLORS, type Note, type NoteColor } from './model';
+import { isNoteEmpty, matchesQuery, NOTE_COLORS, type Note, type NoteColor } from './model';
 
 export type NotesView = 'active' | 'archive' | 'trash';
 export type SortBy = 'date' | 'color';
@@ -12,7 +12,8 @@ export interface NotesQuery {
 
 function inView(note: Note, view: NotesView): boolean {
   if (view === 'trash') return note.deletedAt !== null;
-  if (note.deletedAt !== null) return false;
+  // Blank notes are never worth listing (a note being created, before its first word).
+  if (note.deletedAt !== null || isNoteEmpty(note)) return false;
   return view === 'archive' ? note.archived : !note.archived;
 }
 
