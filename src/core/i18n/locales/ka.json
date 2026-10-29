@@ -85,7 +85,8 @@
     "movedToTrash": "ნაგავში გადავიდა",
     "archived": "დაარქივდა",
     "unarchived": "არქივიდან დაბრუნდა",
-    "restored": "აღდგა"
+    "restored": "აღდგა",
+    "share": "გაზიარება"
   },
   "settings": {
     "title": "პარამეტრები",
@@ -144,5 +145,9 @@
     "openLink": "გახსნა: {{label}}",
     "count_one": "{{count}} ბმული",
     "count_other": "{{count}} ბმული"
+  },
+  "share": {
+    "copied": "ტექსტი დაკოპირდა",
+    "failed": "გაზიარება ვერ მოხერხდა"
   }
 }

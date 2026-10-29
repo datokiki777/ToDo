@@ -85,7 +85,8 @@
     "movedToTrash": "Moved to trash",
     "archived": "Archived",
     "unarchived": "Moved out of archive",
-    "restored": "Restored"
+    "restored": "Restored",
+    "share": "Share"
   },
   "settings": {
     "title": "Settings",
@@ -144,5 +145,9 @@
     "openLink": "Open {{label}}",
     "count_one": "{{count}} link",
     "count_other": "{{count}} links"
+  },
+  "share": {
+    "copied": "Text copied",
+    "failed": "Sharing didn't work"
   }
 }

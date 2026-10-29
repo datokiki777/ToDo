@@ -7,6 +7,7 @@ import {
   ListChecks,
   Pin,
   RotateCcw,
+  Share2,
   Trash2,
   Type,
 } from 'lucide-react';
@@ -31,6 +32,7 @@ import { ColorPicker } from '../components/ColorPicker';
 import { useNote } from '../hooks';
 import { convertKind, isNoteEmpty, type Note, type NoteColor, type NoteContent } from '../model';
 import { notesRepository } from '../repository';
+import { noteToShare, sharePayload } from '../share';
 import { trashDaysLeft } from '../trash';
 import { useAutosave } from '../useAutosave';
 import styles from './NoteEditorPage.module.css';
@@ -111,6 +113,15 @@ function Editor({ note }: { note: Note }) {
     setGroup(created.id);
   };
 
+  // Called straight from the tap, as the phone requires for its share menu.
+  const share = async () => {
+    const payload = noteToShare(draft);
+    if (!payload) return;
+    const result = await sharePayload(payload);
+    if (result === 'copied') showToast(t('share.copied'));
+    if (result === 'failed') showToast(t('share.failed'));
+  };
+
   const togglePin = () => void notesRepository.update(note.id, { pinned: !note.pinned });
 
   const toggleArchive = async () => {
@@ -154,6 +165,9 @@ function Editor({ note }: { note: Note }) {
         <div className={styles.spacer} />
         {!trashed && (
           <>
+            <IconButton label={t('editor.share')} disabled={noteToShare(draft) === null} onClick={() => void share()}>
+              <Share2 size={22} />
+            </IconButton>
             <IconButton
               label={note.pinned ? t('editor.unpin') : t('editor.pin')}
               pressed={note.pinned}
