@@ -1,0 +1,92 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 12px 160px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 4px 12px 160px;
+}
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 0 8px 4px 0;
+}
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.input {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 44px 0 42px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  outline: none;
+  appearance: none;
+}
+.input:focus {
+  border-color: var(--accent);
+}
+.input::-webkit-search-cancel-button {
+  display: none;
+}
+.clear {
+  position: absolute;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  color: var(--muted);
+}
+.fabArea {
+  position: fixed;
+  right: 16px;
+  bottom: calc(var(--nav-h) + var(--safe-bottom) + 16px);
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  cursor: default;
+}
+.fab {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
+  transition: transform 0.15s;
+}
+.fabOpen {
+  transform: rotate(45deg);
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.14);
+}

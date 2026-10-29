@@ -1,0 +1,44 @@
+.wrap {
+  position: relative;
+}
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  cursor: default;
+}
+.menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 11;
+  min-width: 200px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.18);
+}
+.heading {
+  padding: 8px 12px 2px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 12px;
+  border-radius: 8px;
+  text-align: left;
+}
+.item:hover {
+  background: var(--bg);
+}
+.item[aria-checked='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+}

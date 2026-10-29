@@ -1,0 +1,23 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: var(--safe-top) 8px 4px 16px;
+  background: var(--bg);
+}
+.row {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+}
+.title {
+  flex: 1;
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}

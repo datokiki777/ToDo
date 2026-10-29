@@ -1,0 +1,41 @@
+.row {
+  display: flex;
+  align-items: center;
+  padding: 0 4px 4px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.row::-webkit-scrollbar {
+  display: none;
+}
+.target {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: var(--tap);
+}
+.dot {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--note-accent);
+  color: #fff;
+  transition: transform 0.12s;
+}
+.all {
+  background: conic-gradient(
+    var(--red-accent),
+    var(--yellow-accent),
+    var(--green-accent),
+    var(--blue-accent),
+    var(--purple-accent),
+    var(--red-accent)
+  );
+}
+.on {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}

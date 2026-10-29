@@ -1,0 +1,20 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.target {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: var(--tap);
+}
+.dot {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--note-accent);
+  color: #fff;
+}

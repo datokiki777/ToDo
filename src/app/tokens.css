@@ -1,0 +1,77 @@
+:root {
+  --font: 'Noto Sans Georgian Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --bg: #f2f4f5;
+  --surface: #ffffff;
+  --ink: #1e2328;
+  --muted: #4f5c64;
+  --line: #d5dce0;
+  --accent: #14746f;
+  --accent-ink: #ffffff;
+  --accent-soft: #d9eeec;
+  --danger: #b3322f;
+
+  --nav-h: 60px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --tap: 44px;
+
+  --yellow-bg: #fff4bf;
+  --yellow-accent: #d9a200;
+  --red-bg: #ffdcdc;
+  --red-accent: #e0464b;
+  --orange-bg: #ffe3c4;
+  --orange-accent: #ee8420;
+  --green-bg: #daf2cb;
+  --green-accent: #4f9e2a;
+  --teal-bg: #cdf0ea;
+  --teal-accent: #1b9a8d;
+  --blue-bg: #d6e5ff;
+  --blue-accent: #3774df;
+  --purple-bg: #e8dbff;
+  --purple-accent: #8651d4;
+  --gray-bg: #e4e7ea;
+  --gray-accent: #76808a;
+
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --bg: #101416;
+  --surface: #181e21;
+  --ink: #eceff1;
+  --muted: #a3afb6;
+  --line: #2a3338;
+  --accent: #4db6ac;
+  --accent-ink: #0b1a19;
+  --accent-soft: #17302e;
+  --danger: #ff8a85;
+
+  --yellow-bg: #3b3311;
+  --yellow-accent: #e9b300;
+  --red-bg: #471f21;
+  --red-accent: #f0646a;
+  --orange-bg: #47291a;
+  --orange-accent: #f59a3d;
+  --green-bg: #1f3517;
+  --green-accent: #74c24a;
+  --teal-bg: #12332f;
+  --teal-accent: #38b8aa;
+  --blue-bg: #1a2a47;
+  --blue-accent: #6a9bf0;
+  --purple-bg: #2e2045;
+  --purple-accent: #ab82ee;
+  --gray-bg: #2a2f34;
+  --gray-accent: #98a2ac;
+
+  color-scheme: dark;
+}
+
+[data-color='yellow'] { --note-bg: var(--yellow-bg); --note-accent: var(--yellow-accent); }
+[data-color='red'] { --note-bg: var(--red-bg); --note-accent: var(--red-accent); }
+[data-color='orange'] { --note-bg: var(--orange-bg); --note-accent: var(--orange-accent); }
+[data-color='green'] { --note-bg: var(--green-bg); --note-accent: var(--green-accent); }
+[data-color='teal'] { --note-bg: var(--teal-bg); --note-accent: var(--teal-accent); }
+[data-color='blue'] { --note-bg: var(--blue-bg); --note-accent: var(--blue-accent); }
+[data-color='purple'] { --note-bg: var(--purple-bg); --note-accent: var(--purple-accent); }
+[data-color='gray'] { --note-bg: var(--gray-bg); --note-accent: var(--gray-accent); }
