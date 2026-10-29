@@ -25,6 +25,8 @@ import { GroupIcon } from '@/features/groups/icons';
 import { groupsRepository } from '@/features/groups/repository';
 import { AutoTextarea } from '../components/AutoTextarea';
 import { ChecklistEditor } from '../components/ChecklistEditor';
+import { LinkList } from '../components/LinkList';
+import { textLinks } from '../links';
 import { ColorPicker } from '../components/ColorPicker';
 import { useNote } from '../hooks';
 import { convertKind, isNoteEmpty, type Note, type NoteColor, type NoteContent } from '../model';
@@ -56,6 +58,8 @@ function Editor({ note }: { note: Note }) {
   const contentRef = useRef<HTMLDivElement>(null);
 
   const trashed = note.deletedAt !== null;
+  // Taken from the saved note, so the list settles shortly after typing stops instead of jumping.
+  const links = useMemo(() => textLinks(note), [note.title, note.body]); // eslint-disable-line react-hooks/exhaustive-deps
   const [draft, setDraft] = useState<NoteContent>(() =>
     withBlankRow({ kind: note.kind, title: note.title, body: note.body, items: note.items }),
   );
@@ -221,6 +225,7 @@ function Editor({ note }: { note: Note }) {
             }
           }}
         />
+        <LinkList links={links} />
         {draft.kind === 'text' ? (
           <AutoTextarea
             data-field

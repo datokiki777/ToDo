@@ -1,3 +1,7 @@
+.wrap {
+  position: relative;
+  height: 100%;
+}
 .card {
   display: flex;
   flex-direction: column;
@@ -76,4 +80,28 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 11ch;
+}
+.hasOpen .head {
+  padding-right: 40px;
+}
+.open {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--note-accent) 30%, transparent);
+  color: var(--ink);
+}
+.open:active {
+  background: color-mix(in srgb, var(--note-accent) 50%, transparent);
+}
+.linkCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
 }

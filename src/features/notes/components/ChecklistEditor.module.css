@@ -53,3 +53,15 @@
   margin-left: 0;
   margin-right: 0;
 }
+.open {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--tap);
+  height: var(--tap);
+  border-radius: 50%;
+  color: var(--note-accent);
+}
+.open:active {
+  background: color-mix(in srgb, var(--note-accent) 25%, transparent);
+}

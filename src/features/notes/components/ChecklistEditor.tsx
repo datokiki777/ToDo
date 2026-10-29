@@ -2,6 +2,8 @@ import { Plus, X } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { newId } from '@/core/id';
+import { extractLinks } from '../links';
+import { LinkIcon } from './LinkIcon';
 import type { ChecklistItem } from '../model';
 import styles from './ChecklistEditor.module.css';
 
@@ -51,7 +53,9 @@ export function ChecklistEditor({ items, onChange, readOnly }: Props) {
 
   return (
     <div className={styles.list}>
-      {items.map((item, index) => (
+      {items.map((item, index) => {
+        const link = extractLinks(item.text)[0];
+        return (
         <div key={item.id} className={styles.row}>
           <input
             type="checkbox"
@@ -75,6 +79,18 @@ export function ChecklistEditor({ items, onChange, readOnly }: Props) {
             onChange={(event) => patch(item.id, { text: event.target.value })}
             onKeyDown={(event) => onKeyDown(event, index, item)}
           />
+          {link && (
+            <a
+              className={styles.open}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={t('links.openLink', { label: link.label })}
+              title={t('links.openLink', { label: link.label })}
+            >
+              <LinkIcon kind={link.kind} size={19} />
+            </a>
+          )}
           {!readOnly && (
             <button
               type="button"
@@ -86,7 +102,8 @@ export function ChecklistEditor({ items, onChange, readOnly }: Props) {
             </button>
           )}
         </div>
-      ))}
+        );
+      })}
       {!readOnly && (
         <button type="button" className={styles.add} onClick={() => insertAfter(items.length - 1)}>
           <Plus size={20} />

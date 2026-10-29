@@ -21,7 +21,7 @@ beforeEach(() => {
 
 describe('group names and parsing', () => {
   it('tidies names', () => {
-    expect(normalizeGroupName('  ბადელიქსი   პროექტი ')).toBe('ბადელიქსი პროექტი');
+    expect(normalizeGroupName('  სამსახური   პროექტი ')).toBe('სამსახური პროექტი');
     expect(normalizeGroupName('x'.repeat(100))).toHaveLength(40);
   });
 
@@ -40,9 +40,9 @@ describe('group names and parsing', () => {
 
 describe('groups repository', () => {
   it('creates groups and lists them oldest first', async () => {
-    const first = await groups.create({ name: 'ბადელიქსი', icon: 'building', color: 'red' });
+    const first = await groups.create({ name: 'სამსახური', icon: 'building', color: 'red' });
     const second = await groups.create({ name: 'სახლი' });
-    expect(first).toMatchObject({ name: 'ბადელიქსი', icon: 'building', color: 'red' });
+    expect(first).toMatchObject({ name: 'სამსახური', icon: 'building', color: 'red' });
     expect((await groups.getAll()).map((g) => g.id)).toEqual([first.id, second.id]);
   });
 

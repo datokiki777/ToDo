@@ -133,5 +133,11 @@
     "choose": "Choose a group",
     "empty": "No notes in this group yet",
     "emptyHint": "Tap + and the new note will be created in this group."
+  },
+  "links": {
+    "title": "Links",
+    "openLink": "Open {{label}}",
+    "count_one": "{{count}} link",
+    "count_other": "{{count}} links"
   }
 }

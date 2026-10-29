@@ -20,7 +20,7 @@ function repos(prefix: string): BackupRepos {
 describe('backup', () => {
   it('round-trips notes and groups through a backup file', async () => {
     const source = repos('src');
-    const group = await source.groups.create({ name: 'ბადელიქსი', icon: 'building', color: 'red' });
+    const group = await source.groups.create({ name: 'სამსახური', icon: 'building', color: 'red' });
     const n = await source.notes.create({ kind: 'checklist', color: 'purple', groupId: group.id });
     await source.notes.update(n.id, { title: 'სია', items: [{ id: 'i', text: 'პური', done: true }] });
     const trashed = await source.notes.create();
