@@ -5,7 +5,7 @@ export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
-  define: { __APP_VERSION__: JSON.stringify('test') },
+  define: { __APP_VERSION__: JSON.stringify('test'), __APP_BUILD__: JSON.stringify('test') },
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],

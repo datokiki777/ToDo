@@ -114,7 +114,7 @@
     "storageRequest": "Request protection",
     "storageDenied": "The browser said no. Installing the app to your home screen often helps.",
     "about": "About",
-    "version": "Version {{version}}"
+    "version": "Version {{version}} · build {{build}}"
   },
   "pwa": {
     "updateReady": "A new version is ready",

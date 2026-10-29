@@ -132,7 +132,7 @@ export function SettingsPage() {
         <section className={styles.section}>
           <h2 className={styles.heading}>{t('settings.about')}</h2>
           <p className={styles.hint}>
-            ToDo · {t('settings.version', { version: __APP_VERSION__ })}
+            ToDo · {t('settings.version', { version: __APP_VERSION__, build: __APP_BUILD__ })}
           </p>
         </section>
       </div>

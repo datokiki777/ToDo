@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
 import react from '@vitejs/plugin-react';
@@ -8,11 +9,21 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
   version: string;
 };
 
+/** Short id of the commit being built, so every release shows a different value in Settings. */
+function buildId(): string {
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  } catch {
+    return 'dev';
+  }
+}
+
 export default defineConfig({
   // The app is served from the root of its own (sub)domain.
   base: '/',
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
+    __APP_BUILD__: JSON.stringify(buildId()),
   },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },

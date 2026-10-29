@@ -71,6 +71,10 @@ npm run build      # production build + service worker
 npm run preview    # build-ის გამოცდა
 ```
 
+## ვერსია
+
+Settings → "აპის შესახებ" აჩვენებს ორ რამეს: **ვერსიას** (`package.json`-ის `version`, ხელით იცვლება ყოველ გამოშვებაზე) და **აგების კოდს** (git commit-ის მოკლე id, თავისით იცვლება). აგების კოდით ადვილია იმის შემოწმება, რომ ტელეფონზე ზუსტად უახლესი ვერსიაა.
+
 ## გამოშვება
 
 `.github/workflows/deploy.yml` ყოველ `main`-ში ატვირთვაზე ტესტავს, აგებს და GitHub Pages-ზე ათავსებს.
