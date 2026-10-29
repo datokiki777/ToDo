@@ -4,7 +4,7 @@
 }
 .row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   min-height: 48px;
   border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
 }
@@ -12,17 +12,20 @@
   flex: none;
   width: 22px;
   height: 22px;
-  margin: 0 14px 0 2px;
+  margin: 13px 14px 0 2px;
   accent-color: var(--note-accent);
 }
 .text {
+  display: block;
   flex: 1;
   min-width: 0;
-  min-height: 46px;
-  padding: 0;
+  padding: 11px 0;
   border: 0;
   background: transparent;
   font-size: 1.0625rem;
+  line-height: 1.45;
+  overflow: hidden;
+  resize: none;
   outline: none;
 }
 .text::placeholder {
@@ -34,6 +37,7 @@
 }
 .remove {
   display: grid;
+  margin-top: 2px;
   place-items: center;
   flex: none;
   width: var(--tap);
@@ -55,6 +59,7 @@
 }
 .open {
   display: grid;
+  margin-top: 2px;
   place-items: center;
   flex: none;
   width: var(--tap);

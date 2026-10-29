@@ -20,7 +20,7 @@ interface Props {
 export function NoteCard({ note, view, group }: Props) {
   const { t, i18n } = useTranslation();
   const rawTitle = displayTitle(note);
-  const preview = previewLines(note, view === 'grid' ? 4 : 2).map((line) => asOnlyLink(line)?.short ?? line);
+  const preview = previewLines(note, 4).map((line) => asOnlyLink(line)?.short ?? line);
   const progress = note.kind === 'checklist' ? checklistProgress(note) : null;
   const links = noteLinks(note);
   const single = links.length === 1 ? links[0]! : null;
@@ -42,15 +42,7 @@ export function NoteCard({ note, view, group }: Props) {
           <Pin size={15} className={styles.pin} aria-label={t('list.pinned')} />
         )}
       </div>
-      {preview.length > 0 && (
-        <div className={styles.preview}>
-          {preview.map((line, index) => (
-            <p key={index} className={styles.line}>
-              {line}
-            </p>
-          ))}
-        </div>
-      )}
+      {preview.length > 0 && <p className={styles.preview}>{preview.join(' · ')}</p>}
       <div className={styles.foot}>
         {group && (
           <span className={styles.group}>

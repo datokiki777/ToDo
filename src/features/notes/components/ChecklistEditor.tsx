@@ -2,7 +2,9 @@ import { Plus, X } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { newId } from '@/core/id';
+import { applyItemInput } from '../checklist';
 import { extractLinks } from '../links';
+import { AutoTextarea } from './AutoTextarea';
 import { LinkIcon } from './LinkIcon';
 import type { ChecklistItem } from '../model';
 import styles from './ChecklistEditor.module.css';
@@ -15,7 +17,7 @@ interface Props {
 
 export function ChecklistEditor({ items, onChange, readOnly }: Props) {
   const { t } = useTranslation();
-  const inputs = useRef(new Map<string, HTMLInputElement>());
+  const inputs = useRef(new Map<string, HTMLTextAreaElement>());
   const [focusId, setFocusId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -26,6 +28,13 @@ export function ChecklistEditor({ items, onChange, readOnly }: Props) {
 
   const patch = (id: string, changes: Partial<ChecklistItem>) =>
     onChange(items.map((item) => (item.id === id ? { ...item, ...changes } : item)));
+
+  // Typing, Enter (a line break) and pasting several lines all arrive here.
+  const type = (id: string, value: string) => {
+    const result = applyItemInput(items, id, value);
+    onChange(result.items);
+    if (result.focusId) setFocusId(result.focusId);
+  };
 
   const insertAfter = (index: number) => {
     const item: ChecklistItem = { id: newId(), text: '', done: false };
@@ -41,11 +50,8 @@ export function ChecklistEditor({ items, onChange, readOnly }: Props) {
     if (neighbour) setFocusId(neighbour.id);
   };
 
-  const onKeyDown = (event: KeyboardEvent<HTMLInputElement>, index: number, item: ChecklistItem) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      insertAfter(index);
-    } else if (event.key === 'Backspace' && item.text === '' && items.length > 1) {
+  const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>, index: number, item: ChecklistItem) => {
+    if (event.key === 'Backspace' && item.text === '' && items.length > 1) {
       event.preventDefault();
       remove(index);
     }
@@ -65,18 +71,18 @@ export function ChecklistEditor({ items, onChange, readOnly }: Props) {
             aria-label={t('editor.markDone')}
             onChange={(event) => patch(item.id, { done: event.target.checked })}
           />
-          <input
-            ref={(el) => {
+          <AutoTextarea
+            data-field
+            inputRef={(el) => {
               if (el) inputs.current.set(item.id, el);
               else inputs.current.delete(item.id);
             }}
-            data-field
             className={`${styles.text} ${item.done ? styles.done : ''}`}
             value={item.text}
             readOnly={readOnly}
             placeholder={t('editor.itemPlaceholder')}
             enterKeyHint="next"
-            onChange={(event) => patch(item.id, { text: event.target.value })}
+            onValueChange={(value) => type(item.id, value)}
             onKeyDown={(event) => onKeyDown(event, index, item)}
           />
           {link && (
