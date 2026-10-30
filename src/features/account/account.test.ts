@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { authErrorKey, errorCode } from './errors';
+import { authErrorKey, errorCode, isCancellation } from './errors';
 import { emailProblem, passwordProblem } from './validation';
 
 describe('authErrorKey', () => {
@@ -20,6 +20,21 @@ describe('authErrorKey', () => {
     expect(authErrorKey('auth/too-many-requests')).toBe('account.errorTooMany');
     expect(authErrorKey('auth/operation-not-allowed')).toBe('account.errorNotAllowed');
     expect(authErrorKey('auth/admin-restricted-operation')).toBe('account.errorSignupClosed');
+  });
+
+  it('has its own messages for Google sign-in problems', () => {
+    expect(authErrorKey('auth/popup-closed-by-user')).toBe('account.errorGoogleCancelled');
+    expect(authErrorKey('auth/cancelled-popup-request')).toBe('account.errorGoogleCancelled');
+    expect(authErrorKey('auth/popup-blocked')).toBe('account.errorPopupBlocked');
+    expect(authErrorKey('auth/unauthorized-domain')).toBe('account.errorDomain');
+    expect(authErrorKey('auth/account-exists-with-different-credential')).toBe('account.errorDifferentMethod');
+  });
+
+  it('knows which codes are just the person closing the window', () => {
+    expect(isCancellation('auth/popup-closed-by-user')).toBe(true);
+    expect(isCancellation('auth/cancelled-popup-request')).toBe(true);
+    expect(isCancellation('auth/popup-blocked')).toBe(false);
+    expect(isCancellation('auth/network-request-failed')).toBe(false);
   });
 
   it('falls back to a generic message', () => {

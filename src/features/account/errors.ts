@@ -20,6 +20,15 @@ export function authErrorKey(code: string): string {
       return 'account.errorNotAllowed';
     case 'auth/user-disabled':
       return 'account.errorDisabled';
+    case 'auth/popup-closed-by-user':
+    case 'auth/cancelled-popup-request':
+      return 'account.errorGoogleCancelled';
+    case 'auth/popup-blocked':
+      return 'account.errorPopupBlocked';
+    case 'auth/unauthorized-domain':
+      return 'account.errorDomain';
+    case 'auth/account-exists-with-different-credential':
+      return 'account.errorDifferentMethod';
     case 'auth/admin-restricted-operation':
       return 'account.errorSignupClosed';
     default:
@@ -28,6 +37,11 @@ export function authErrorKey(code: string): string {
 }
 
 /** Pulls the "auth/..." code out of whatever was thrown. */
+/** Problems that are not really errors: the person just changed their mind. */
+export function isCancellation(code: string): boolean {
+  return code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request';
+}
+
 export function errorCode(error: unknown): string {
   if (typeof error === 'object' && error !== null && 'code' in error) {
     const code = (error as { code: unknown }).code;

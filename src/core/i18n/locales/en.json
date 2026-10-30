@@ -154,7 +154,7 @@
     "title": "Account",
     "loading": "Loading…",
     "unavailable": "The account part couldn't load. Try again later.",
-    "intro": "Signing in will let you see your notes on other devices too. Syncing is switched on in the next step; for now we're only testing sign-in.",
+    "intro": "Signing in will let you see your notes on other devices too. Syncing is switched on in the next step.",
     "email": "Email",
     "password": "Password",
     "passwordHint": "At least {{count}} characters",
@@ -174,9 +174,16 @@
     "errorEmailInUse": "An account with this email already exists. Try signing in.",
     "errorNetwork": "Couldn't connect. Check your internet.",
     "errorTooMany": "Too many attempts. Wait a bit and try again.",
-    "errorNotAllowed": "Email sign-in isn't enabled in Firebase.",
+    "errorNotAllowed": "This sign-in method isn't enabled in Firebase.",
     "errorDisabled": "This account has been disabled.",
     "errorSignupClosed": "Creating new accounts is closed.",
-    "errorGeneric": "Something went wrong ({{code}})."
+    "errorGeneric": "Something went wrong ({{code}}).",
+    "google": "Sign in with Google",
+    "useEmail": "or with email and password",
+    "emailOwnPassword": "This is a separate password for this app, not your Google password. Make up a new one.",
+    "errorGoogleCancelled": "Sign-in cancelled.",
+    "errorPopupBlocked": "The browser blocked Google's window. Allow pop-ups for this site and try again.",
+    "errorDomain": "This address isn't added in Firebase (Authorized domains).",
+    "errorDifferentMethod": "You already have an account with this email using another method. Sign in with that."
   }
 }

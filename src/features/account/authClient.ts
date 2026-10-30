@@ -7,6 +7,8 @@ export interface AuthUser {
 export interface AuthClient {
   /** Calls back with the current person now and whenever they sign in or out. Returns "stop". */
   onChange(callback: (user: AuthUser | null) => void): () => void;
+  /** Opens Google's own sign-in window. */
+  signInWithGoogle(): Promise<AuthUser>;
   signIn(email: string, password: string): Promise<AuthUser>;
   signUp(email: string, password: string): Promise<AuthUser>;
   signOut(): Promise<void>;

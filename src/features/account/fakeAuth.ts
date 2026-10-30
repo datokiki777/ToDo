@@ -36,6 +36,17 @@ export function createFakeAuth(): AuthClient {
       setTimeout(() => callback(current()), 30);
       return () => listeners.delete(callback);
     },
+    async signInWithGoogle() {
+      await wait();
+      // Tests choose the outcome through this flag: an address, "cancel" or "blocked".
+      const choice = localStorage.getItem('fake-auth.google') ?? 'google.user@gmail.com';
+      if (choice === 'cancel') throw new FakeError('auth/popup-closed-by-user');
+      if (choice === 'blocked') throw new FakeError('auth/popup-blocked');
+      if (choice === 'domain') throw new FakeError('auth/unauthorized-domain');
+      localStorage.setItem(SESSION, choice);
+      emit();
+      return current()!;
+    },
     async signIn(email, password) {
       await guard(email);
       if (email.startsWith('toomany')) throw new FakeError('auth/too-many-requests');

@@ -11,6 +11,7 @@ interface AccountState {
   busy: boolean;
   /** Loads the account system and starts following the signed-in state. Safe to call repeatedly. */
   init: () => Promise<void>;
+  signInWithGoogle: () => Promise<AccountResult>;
   signIn: (email: string, password: string) => Promise<AccountResult>;
   signUp: (email: string, password: string) => Promise<AccountResult>;
   signOut: () => Promise<AccountResult>;
@@ -50,6 +51,7 @@ export const useAccount = create<AccountState>((set, get) => {
       }
     },
 
+    signInWithGoogle: () => run((c) => c.signInWithGoogle()),
     signIn: (email, password) => run((c) => c.signIn(email.trim(), password)),
     signUp: (email, password) => run((c) => c.signUp(email.trim(), password)),
     signOut: () => run((c) => c.signOut()),

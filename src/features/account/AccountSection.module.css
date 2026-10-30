@@ -99,6 +99,9 @@
   color: var(--accent-ink);
 }
 .link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   align-self: flex-start;
   min-height: var(--tap);
   padding: 0 4px;
@@ -113,4 +116,15 @@
   .button:hover:not(.primary):not(:disabled) {
     background: var(--bg);
   }
+}
+
+.google {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+.chevronOpen {
+  transform: rotate(180deg);
 }
