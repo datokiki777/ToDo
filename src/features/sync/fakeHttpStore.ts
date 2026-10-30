@@ -10,6 +10,7 @@ export function createFakeHttpStore(uid: string): CloudStore {
       let stopped = false;
       let first = true;
       let cursor = since;
+      const delivered = new Set<string>();
       let timer: ReturnType<typeof setTimeout> | undefined;
 
       const poll = async () => {
@@ -17,8 +18,12 @@ export function createFakeHttpStore(uid: string): CloudStore {
         try {
           const response = await fetch(`/__cloud/changes?uid=${uid}&collection=${collection}&since=${cursor ?? ''}`);
           if (response.ok) {
-            const docs = (await response.json()) as CloudDoc[];
-            for (const d of docs) cursor = Math.max(cursor ?? 0, d.serverTime);
+            const all = (await response.json()) as CloudDoc[];
+            const docs = all.filter((d) => !delivered.has(`${d.id}@${d.serverTime}`));
+            for (const d of docs) {
+              delivered.add(`${d.id}@${d.serverTime}`);
+              cursor = Math.max(cursor ?? 0, d.serverTime);
+            }
             if (docs.length > 0 || first) onDocs(docs);
             first = false;
           }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatLongDate, formatShortDate } from './time';
+import { formatDay, formatLongDate, formatShortDate } from './time';
 
 const now = new Date(2026, 9, 29, 12, 0).getTime();
 
@@ -20,5 +20,12 @@ describe('time formatting', () => {
   it('uses month names when the browser has them', () => {
     const earlier = new Date(2026, 2, 3).getTime();
     expect(formatShortDate(earlier, 'en', now, true)).toMatch(/Mar/);
+  });
+});
+
+describe('formatDay', () => {
+  it('writes a calendar day with or without month names', () => {
+    expect(formatDay('2026-10-05', 'en', true)).toMatch(/October/);
+    expect(formatDay('2026-10-05', 'en', false)).toMatch(/10\D05\D2026/);
   });
 });

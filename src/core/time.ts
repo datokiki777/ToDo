@@ -47,3 +47,17 @@ export function formatLongDate(
     minute: '2-digit',
   }).format(date);
 }
+
+/** A calendar day given as "2026-10-30", written the way the language writes dates. */
+export function formatDay(
+  key: string,
+  locale: string,
+  monthNames: boolean = hasMonthNames(locale),
+): string {
+  const [y, m, d] = key.split('-').map(Number) as [number, number, number];
+  const date = new Date(y, m - 1, d);
+  return new Intl.DateTimeFormat(
+    locale,
+    monthNames ? { day: 'numeric', month: 'long', year: 'numeric' } : { day: '2-digit', month: '2-digit', year: 'numeric' },
+  ).format(date);
+}

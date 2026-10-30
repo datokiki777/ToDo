@@ -8,6 +8,8 @@ import { PageHeader } from '@/core/ui/PageHeader';
 import { Segmented } from '@/core/ui/Segmented';
 import { useToasts } from '@/core/ui/toasts';
 import { AccountSection } from '@/features/account/AccountSection';
+import { useAccount } from '@/features/account/store';
+import { SnapshotsSection } from '@/features/snapshots/SnapshotsSection';
 import { BackupError, downloadBackup, restoreBackup } from '@/features/backup/backup';
 import styles from './SettingsPage.module.css';
 
@@ -24,6 +26,7 @@ export function SettingsPage() {
   const theme = useSettings((s) => s.theme);
   const setLanguage = useSettings((s) => s.setLanguage);
   const setTheme = useSettings((s) => s.setTheme);
+  const signedIn = useAccount((s) => s.status === 'signedIn');
   const fileInput = useRef<HTMLInputElement>(null);
   const [persist, setPersist] = useState<PersistState | null>(null);
   const [denied, setDenied] = useState(false);
@@ -75,6 +78,7 @@ export function SettingsPage() {
       <PageHeader title={t('settings.title')} />
       <div className={styles.page}>
         <AccountSection />
+        {signedIn && <SnapshotsSection />}
 
         <section className={styles.section}>
           <h2 className={styles.heading}>{t('settings.language')}</h2>

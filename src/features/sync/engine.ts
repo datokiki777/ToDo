@@ -99,6 +99,8 @@ export class SyncEngine {
   }
 
   private set(patch: Partial<SyncStatus>) {
+    const changed = (Object.keys(patch) as Array<keyof SyncStatus>).some((key) => this.status[key] !== patch[key]);
+    if (!changed) return;
     this.status = { ...this.status, ...patch };
     this.options.onStatus?.(this.status);
   }
@@ -212,9 +214,15 @@ export class SyncEngine {
     this.retryDelay = Math.min(this.retryDelay * 3, 300_000);
   }
 
-  private succeeded(): void {
+  /** `touched`: something was actually sent or received, so "last synced" moves forward. */
+  private succeeded(touched = false): void {
     this.retryDelay = 5_000;
-    this.set({ state: 'idle', error: null, lastSyncAt: this.now() });
+    const wasIdle = this.status.state === 'idle';
+    this.set({
+      state: 'idle',
+      error: null,
+      lastSyncAt: wasIdle && !touched ? this.status.lastSyncAt : this.now(),
+    });
   }
 
   // ---- listening to the cloud --------------------------------------------------------------
@@ -238,10 +246,10 @@ export class SyncEngine {
           since,
           (docs) =>
             this.enqueue(async () => {
-              await this.applyRemote(collection, docs);
+              const changed = await this.applyRemote(collection, docs);
               this.ready[collection] = true;
-              if (this.ready.notes && this.ready.groups && this.status.state !== 'syncing') this.succeeded();
-              this.schedulePush(0);
+              if (this.ready.notes && this.ready.groups && this.status.state !== 'syncing') this.succeeded(changed > 0);
+              this.schedulePush(0); // cheap: finds nothing to send when everything is already in step
             }),
           (code) => {
             this.needsResubscribe = true;
@@ -253,8 +261,8 @@ export class SyncEngine {
   }
 
   /** Merges documents from the cloud into the local database. Never loses text silently. */
-  async applyRemote(collection: Collection, docs: CloudDoc[]): Promise<void> {
-    if (docs.length === 0) return;
+  async applyRemote(collection: Collection, docs: CloudDoc[]): Promise<number> {
+    if (docs.length === 0) return 0;
     let applied = 0;
     let copies = 0;
     const { db } = this;
@@ -313,6 +321,7 @@ export class SyncEngine {
     if (applied > 0 || copies > 0) {
       this.set({ pulled: this.status.pulled + applied, conflicts: this.status.conflicts + copies });
     }
+    return applied + copies;
   }
 
   private conflictCopy(note: Note): Note {
@@ -443,6 +452,6 @@ export class SyncEngine {
     this.set({ pushed: this.status.pushed + pushed });
     await this.refreshPending();
     if (this.status.pending > 0) this.schedulePush();
-    this.succeeded();
+    this.succeeded(pushed > 0);
   }
 }

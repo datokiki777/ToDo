@@ -3,6 +3,7 @@ import { db } from '@/core/db/db';
 import i18n from '@/core/i18n';
 import { useAccount } from '@/features/account/store';
 import { downloadBackup } from '@/features/backup/backup';
+import { snapshotsSettled, startSnapshots, stopSnapshots } from '@/features/snapshots/controller';
 import { createCloudStore } from './cloudStore';
 import { SyncEngine, type SyncStatus } from './engine';
 
@@ -36,6 +37,7 @@ function stopEngine() {
   engine = null;
   release?.();
   release = null;
+  stopSnapshots();
   useSync.setState({ status: OFF, follower: false });
 }
 
@@ -48,7 +50,9 @@ async function runEngine(uid: string) {
     uid,
     conflictLabel: () => i18n.t('sync.conflictCopy'),
     onStatus: (status) => {
-      if (engine === mine) useSync.setState({ status });
+      if (engine !== mine) return;
+      useSync.setState({ status });
+      if (status.state === 'idle' && status.pending === 0) snapshotsSettled();
     },
   });
   engine = mine;
@@ -63,6 +67,7 @@ function startEngine(uid: string) {
   stopEngine();
   currentUid = uid;
   useSync.setState({ status: { ...OFF, state: 'starting' } });
+  startSnapshots(uid); // any open window can browse and restore; only the syncing one writes them
 
   // Only one open window should sync at a time (an installed app plus a browser tab, say).
   if (typeof navigator !== 'undefined' && 'locks' in navigator) {
