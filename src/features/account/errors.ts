@@ -42,10 +42,4 @@ export function isCancellation(code: string): boolean {
   return code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request';
 }
 
-export function errorCode(error: unknown): string {
-  if (typeof error === 'object' && error !== null && 'code' in error) {
-    const code = (error as { code: unknown }).code;
-    if (typeof code === 'string') return code;
-  }
-  return 'unknown';
-}
+export { errorCode } from '@/core/errorCode';

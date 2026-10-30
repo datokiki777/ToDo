@@ -4,8 +4,8 @@ import { notesRepository } from './repository';
 
 /**
  * Saves the editor's draft shortly after typing stops, and always when the page is hidden or the
- * editor closes, so a note is never lost to a quick app switch. Returns `flush`: call it and await
- * the result to be sure everything typed so far has reached the database.
+ * editor closes, so a note is never lost to a quick app switch. `flush` resolves when everything typed
+ * so far has reached the database.
  */
 export function useAutosave(id: string, draft: NoteContent, enabled: boolean, delayMs = 400) {
   const latest = useRef(draft);
@@ -52,5 +52,17 @@ export function useAutosave(id: string, draft: NoteContent, enabled: boolean, de
     };
   }, [flush]);
 
-  return flush;
+  const snapshot = (content: NoteContent) => JSON.stringify(contentForSave(content));
+  return {
+    flush,
+    /** True while the person has typed something that has not been saved yet. */
+    hasUnsaved: () => snapshot(latest.current) !== saved.current,
+    /** What the saved version looks like, comparable with `snapshotOf`. */
+    savedSnapshot: () => saved.current,
+    snapshotOf: snapshot,
+    /** Treat this content as already saved (it just came from outside, e.g. another device). */
+    rebase: (content: NoteContent) => {
+      saved.current = snapshot(content);
+    },
+  };
 }

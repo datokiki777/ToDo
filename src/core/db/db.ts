@@ -2,9 +2,24 @@ import Dexie, { type EntityTable } from 'dexie';
 import type { Group } from '@/features/groups/model';
 import type { Note } from '@/features/notes/model';
 
+/** Bookkeeping for cloud sync, kept next to the data it describes. */
+export interface SyncRow {
+  /** "n:<id>" / "g:<id>" = last version known to be in the cloud; "meta:..." = account and cursors. */
+  key: string;
+  value: number | string;
+}
+
+/** A note that was deleted for good locally and whose deletion still has to reach the cloud. */
+export interface Tombstone {
+  key: string;
+  updatedAt: number;
+}
+
 export class TodoDB extends Dexie {
   notes!: EntityTable<Note, 'id'>;
   groups!: EntityTable<Group, 'id'>;
+  sync!: EntityTable<SyncRow, 'key'>;
+  tombstones!: EntityTable<Tombstone, 'key'>;
 
   constructor(name = 'todo-db') {
     super(name);
@@ -26,6 +41,13 @@ export class TodoDB extends Dexie {
             if (note.groupId === undefined) note.groupId = null;
           }),
       );
+    // v3: sync bookkeeping. Nothing existing changes.
+    this.version(3).stores({
+      notes: 'id, updatedAt, deletedAt, color, groupId',
+      groups: 'id, updatedAt, deletedAt',
+      sync: 'key',
+      tombstones: 'key',
+    });
   }
 }
 

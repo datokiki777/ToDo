@@ -2,6 +2,7 @@ import { ChevronDown, Eye, EyeOff, LogIn } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { authErrorKey, isCancellation } from './errors';
+import { SyncPanel } from '@/features/sync/SyncPanel';
 import { useAccount } from './store';
 import { emailProblem, MIN_PASSWORD_LENGTH, passwordProblem } from './validation';
 import styles from './AccountSection.module.css';
@@ -69,7 +70,7 @@ export function AccountSection() {
       {status === 'signedIn' && user && (
         <>
           <p className={styles.signedIn}>{t('account.signedInAs', { email: user.email })}</p>
-          <p className={styles.hint}>{t('account.notSyncedYet')}</p>
+          <SyncPanel />
           <div className={styles.buttons}>
             <button
               type="button"

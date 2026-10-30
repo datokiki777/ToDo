@@ -1,5 +1,6 @@
 import { db as defaultDb, type TodoDB } from '@/core/db/db';
 import { newId } from '@/core/id';
+import { purgeNotes } from './purge';
 import {
   DEFAULT_COLOR,
   isNoteEmpty,
@@ -92,47 +93,47 @@ export function createNotesRepository(
 
     // NOTE: with sync this must become a tombstone instead of a hard delete.
     async deleteForever(id) {
-      await db.notes.delete(id);
+      await db.transaction('rw', db.notes, db.sync, db.tombstones, () => purgeNotes(db, [id], now()));
     },
 
     async emptyTrash() {
-      return db.transaction('rw', db.notes, async () => {
+      return db.transaction('rw', db.notes, db.sync, db.tombstones, async () => {
         const ids = (await db.notes.toArray())
           .filter((note) => note.deletedAt !== null)
           .map((note) => note.id);
-        await db.notes.bulkDelete(ids);
+        await purgeNotes(db, ids, now());
         return ids.length;
       });
     },
 
     async purgeExpiredTrash(retentionMs) {
       const cutoff = now() - retentionMs;
-      return db.transaction('rw', db.notes, async () => {
+      return db.transaction('rw', db.notes, db.sync, db.tombstones, async () => {
         const ids = (await db.notes.toArray())
           .filter((note) => note.deletedAt !== null && note.deletedAt <= cutoff)
           .map((note) => note.id);
-        await db.notes.bulkDelete(ids);
+        await purgeNotes(db, ids, now());
         return ids.length;
       });
     },
 
     /** Remove blank notes left behind when someone opens "new note" and leaves without typing. */
     async purgeEmpty() {
-      return db.transaction('rw', db.notes, async () => {
+      return db.transaction('rw', db.notes, db.sync, db.tombstones, async () => {
         const ids = (await db.notes.toArray())
           .filter((note) => note.deletedAt === null && isNoteEmpty(note))
           .map((note) => note.id);
-        await db.notes.bulkDelete(ids);
+        await purgeNotes(db, ids, now());
         return ids.length;
       });
     },
 
     /** Delete one note only if it is blank right now (checked and deleted in one transaction). */
     async deleteIfEmpty(id) {
-      return db.transaction('rw', db.notes, async () => {
+      return db.transaction('rw', db.notes, db.sync, db.tombstones, async () => {
         const note = await db.notes.get(id);
         if (!note || note.deletedAt !== null || !isNoteEmpty(note)) return false;
-        await db.notes.delete(id);
+        await purgeNotes(db, [id], now());
         return true;
       });
     },

@@ -72,7 +72,8 @@ function Editor({ note }: { note: Note }) {
   const group = groups?.find((g) => g.id === note.groupId) ?? null;
   const startedEmpty = useMemo(() => isNoteEmpty(note), [note.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const flush = useAutosave(note.id, draft, !trashed);
+  const autosave = useAutosave(note.id, draft, !trashed);
+  const { flush } = autosave;
 
   // When the editor closes (back button, system back, anything): wait for the final save, then
   // remove the note if it is still blank. The deferred check skips React's dev-only fake unmount.
@@ -89,6 +90,16 @@ function Editor({ note }: { note: Note }) {
       }, 0);
     };
   }, [note.id]);
+
+  // If this note was changed from outside (another device, via sync) while nothing new was typed
+  // here, show the new text instead of the old one, so typing never overwrites it unknowingly.
+  useEffect(() => {
+    const incoming: NoteContent = { kind: note.kind, title: note.title, body: note.body, items: note.items };
+    if (autosave.snapshotOf(incoming) === autosave.savedSnapshot()) return; // our own save, or no change
+    if (autosave.hasUnsaved()) return; // the person is typing: keep their text
+    autosave.rebase(incoming);
+    setDraft(withBlankRow(incoming));
+  }, [note.kind, note.title, note.body, note.items]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const goBack = () => {
     if (location.key !== 'default') navigate(-1);
