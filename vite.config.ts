@@ -24,6 +24,8 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
     __APP_BUILD__: JSON.stringify(buildId()),
+    // Test build only (VITE_FAKE_AUTH=1): swaps Firebase sign-in for an in-browser fake.
+    __FAKE_AUTH__: JSON.stringify(process.env.VITE_FAKE_AUTH === '1'),
   },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },

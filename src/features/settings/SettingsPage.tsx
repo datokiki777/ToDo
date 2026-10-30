@@ -7,6 +7,7 @@ import { getPersistState, requestPersistence, type PersistState } from '@/core/s
 import { PageHeader } from '@/core/ui/PageHeader';
 import { Segmented } from '@/core/ui/Segmented';
 import { useToasts } from '@/core/ui/toasts';
+import { AccountSection } from '@/features/account/AccountSection';
 import { BackupError, downloadBackup, restoreBackup } from '@/features/backup/backup';
 import styles from './SettingsPage.module.css';
 
@@ -73,6 +74,8 @@ export function SettingsPage() {
     <>
       <PageHeader title={t('settings.title')} />
       <div className={styles.page}>
+        <AccountSection />
+
         <section className={styles.section}>
           <h2 className={styles.heading}>{t('settings.language')}</h2>
           <Segmented

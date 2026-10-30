@@ -4,6 +4,7 @@ import { requestPersistence } from '@/core/storage';
 import { ToastHost } from '@/core/ui/ToastHost';
 import { NoteEditorPage } from '@/features/notes/pages/NoteEditorPage';
 import { NotesPage } from '@/features/notes/pages/NotesPage';
+import { useAccount } from '@/features/account/store';
 import { notesRepository } from '@/features/notes/repository';
 import { TRASH_RETENTION_MS } from '@/features/notes/trash';
 import { SettingsPage } from '@/features/settings/SettingsPage';
@@ -16,6 +17,8 @@ export default function App() {
 
   useEffect(() => {
     // Ask the browser to keep our data, and tidy blank notes left over from an interrupted session.
+    // Start the account system a moment after the first screen is up, as a separate download.
+    const startAccount = window.setTimeout(() => void useAccount.getState().init(), 0);
     void requestPersistence();
     void notesRepository.purgeEmpty();
 
@@ -27,7 +30,10 @@ export default function App() {
     };
     purgeTrash();
     document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
+    return () => {
+      window.clearTimeout(startAccount);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, []);
 
   return (

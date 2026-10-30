@@ -149,5 +149,34 @@
   "share": {
     "copied": "Text copied",
     "failed": "Sharing didn't work"
+  },
+  "account": {
+    "title": "Account",
+    "loading": "Loading…",
+    "unavailable": "The account part couldn't load. Try again later.",
+    "intro": "Signing in will let you see your notes on other devices too. Syncing is switched on in the next step; for now we're only testing sign-in.",
+    "email": "Email",
+    "password": "Password",
+    "passwordHint": "At least {{count}} characters",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "signIn": "Sign in",
+    "signUp": "Create account",
+    "forgot": "Forgot password",
+    "signOut": "Sign out",
+    "signedInAs": "Signed in as {{email}}",
+    "notSyncedYet": "Your notes are only on this device for now. Syncing comes in the next step.",
+    "resetSent": "A password reset email was sent to {{email}}. Check your inbox and spam. It may arrive in English.",
+    "resetNeedsEmail": "Enter a valid email first to reset the password.",
+    "errorEmailFormat": "That email doesn't look right. For example: name@example.com",
+    "errorPasswordShort": "The password needs at least 8 characters.",
+    "errorCredentials": "Wrong email or password.",
+    "errorEmailInUse": "An account with this email already exists. Try signing in.",
+    "errorNetwork": "Couldn't connect. Check your internet.",
+    "errorTooMany": "Too many attempts. Wait a bit and try again.",
+    "errorNotAllowed": "Email sign-in isn't enabled in Firebase.",
+    "errorDisabled": "This account has been disabled.",
+    "errorSignupClosed": "Creating new accounts is closed.",
+    "errorGeneric": "Something went wrong ({{code}})."
   }
 }
