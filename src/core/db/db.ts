@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { Group } from '@/features/groups/model';
+import type { SnapshotMeta } from '@/features/snapshots/model';
 import type { Note } from '@/features/notes/model';
 
 /** Bookkeeping for cloud sync, kept next to the data it describes. */
@@ -15,11 +16,23 @@ export interface Tombstone {
   updatedAt: number;
 }
 
+/** A daily backup made when the app was left, waiting until it can be uploaded. */
+export interface PendingSnapshot {
+  /** The day it belongs to ("2026-10-30"), which is also its name in the cloud. */
+  id: string;
+  /** Only ever uploaded to the account it was made for. */
+  uid: string;
+  takenAt: number;
+  meta: SnapshotMeta;
+  chunks: Uint8Array[];
+}
+
 export class TodoDB extends Dexie {
   notes!: EntityTable<Note, 'id'>;
   groups!: EntityTable<Group, 'id'>;
   sync!: EntityTable<SyncRow, 'key'>;
   tombstones!: EntityTable<Tombstone, 'key'>;
+  pendingSnapshots!: EntityTable<PendingSnapshot, 'id'>;
 
   constructor(name = 'todo-db') {
     super(name);
@@ -47,6 +60,14 @@ export class TodoDB extends Dexie {
       groups: 'id, updatedAt, deletedAt',
       sync: 'key',
       tombstones: 'key',
+    });
+    // v4: backups waiting for an upload. Nothing existing changes.
+    this.version(4).stores({
+      notes: 'id, updatedAt, deletedAt, color, groupId',
+      groups: 'id, updatedAt, deletedAt',
+      sync: 'key',
+      tombstones: 'key',
+      pendingSnapshots: 'id',
     });
   }
 }

@@ -6,6 +6,8 @@ export class FakeSnapshotStore implements SnapshotStore {
   metas = new Map<string, SnapshotMeta>();
   chunks = new Map<string, Uint8Array[]>();
   writes = 0;
+  /** When true, writes are refused (no connection). */
+  offline = false;
 
   async list() {
     return [...this.metas.values()].map((m) => ({ ...m }));
@@ -16,6 +18,7 @@ export class FakeSnapshotStore implements SnapshotStore {
     return chunks.map((c) => c.slice());
   }
   async write(meta: SnapshotMeta, chunks: Uint8Array[]) {
+    if (this.offline) throw Object.assign(new Error('offline'), { code: 'unavailable' });
     this.metas.set(meta.id, { ...meta });
     this.chunks.set(meta.id, chunks.map((c) => c.slice()));
     this.writes += 1;

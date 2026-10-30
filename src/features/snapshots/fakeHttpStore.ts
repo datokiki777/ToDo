@@ -9,7 +9,10 @@ const toBase64 = (bytes: Uint8Array) => {
 const fromBase64 = (text: string) => Uint8Array.from(atob(text), (c) => c.charCodeAt(0));
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, init);
+  // Like Firestore, a lost connection is reported with the code "unavailable".
+  const response = await fetch(path, init).catch(() => {
+    throw Object.assign(new Error('offline'), { code: 'unavailable' });
+  });
   if (!response.ok) throw Object.assign(new Error('request failed'), { code: 'unavailable' });
   return (await response.json()) as T;
 }

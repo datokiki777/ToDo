@@ -88,3 +88,11 @@
     background: var(--accent-soft);
   }
 }
+
+.note {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}

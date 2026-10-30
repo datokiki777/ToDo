@@ -67,7 +67,8 @@ function startEngine(uid: string) {
   stopEngine();
   currentUid = uid;
   useSync.setState({ status: { ...OFF, state: 'starting' } });
-  startSnapshots(uid); // any open window can browse and restore; only the syncing one writes them
+  // Any open window can browse and restore. A backup is only made once this device has synced.
+  startSnapshots(uid, () => useSync.getState().status.lastSyncAt !== null);
 
   // Only one open window should sync at a time (an installed app plus a browser tab, say).
   if (typeof navigator !== 'undefined' && 'locks' in navigator) {
@@ -111,8 +112,14 @@ export async function resetLocalDataForCurrentAccount(): Promise<void> {
   if (!uid) return;
   await downloadBackup(); // if this fails, nothing below runs and nothing is lost
   stopEngine();
-  await db.transaction('rw', [db.notes, db.groups, db.sync, db.tombstones], async () => {
-    await Promise.all([db.notes.clear(), db.groups.clear(), db.sync.clear(), db.tombstones.clear()]);
+  await db.transaction('rw', [db.notes, db.groups, db.sync, db.tombstones, db.pendingSnapshots], async () => {
+    await Promise.all([
+      db.notes.clear(),
+      db.groups.clear(),
+      db.sync.clear(),
+      db.tombstones.clear(),
+      db.pendingSnapshots.clear(), // a waiting backup belongs to the other account
+    ]);
   });
   currentUid = null;
   startEngine(uid);

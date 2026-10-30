@@ -1,5 +1,7 @@
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { db } from '@/core/db/db';
 import { formatDay, formatShortDate } from '@/core/time';
 import { ConfirmDialog } from '@/core/ui/ConfirmDialog';
 import { Sheet } from '@/core/ui/Sheet';
@@ -12,7 +14,7 @@ import {
   takeSnapshotNow,
   useSnapshots,
 } from './controller';
-import { SNAPSHOT_KEEP_DAYS, SnapshotError, type SnapshotMeta } from './model';
+import { SNAPSHOT_KEEP, SnapshotError, type SnapshotMeta } from './model';
 import { previewRestore, type RestorePreview } from './restore';
 import styles from './SnapshotsSection.module.css';
 
@@ -29,6 +31,7 @@ export function SnapshotsSection() {
   const { t, i18n } = useTranslation();
   const ready = useSnapshots((s) => s.ready);
   const autoError = useSnapshots((s) => s.error);
+  const waiting = useLiveQuery(() => db.pendingSnapshots.count(), []) ?? 0;
   const showToast = useToasts((s) => s.show);
 
   const [items, setItems] = useState<SnapshotMeta[] | null>(null);
@@ -107,7 +110,8 @@ export function SnapshotsSection() {
       <h2 id="snapshots-heading" className={styles.heading}>
         {t('snapshots.title')}
       </h2>
-      <p className={styles.hint}>{t('snapshots.intro', { days: SNAPSHOT_KEEP_DAYS })}</p>
+      <p className={styles.hint}>{t('snapshots.intro', { count: SNAPSHOT_KEEP })}</p>
+      {waiting > 0 && <p className={styles.note}>{t('snapshots.waiting', { count: waiting })}</p>}
 
       <div className={styles.buttons}>
         <button type="button" className={styles.button} disabled={!ready || loading} onClick={() => void refresh()}>

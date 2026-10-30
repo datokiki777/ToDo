@@ -6,13 +6,15 @@ import { createNotesRepository, type NotesRepository } from '@/features/notes/re
 import { SyncEngine } from '@/features/sync/engine';
 import { FakeCloud } from '@/features/sync/testing/fakeCloud';
 import {
-  addDays,
+  BEFORE_RESTORE_KEEP,
   dateKey,
   decodeSnapshot,
   encodeSnapshot,
-  isExpired,
+  expiredSnapshots,
+  SNAPSHOT_KEEP,
   stateHash,
   type SnapshotData,
+  type SnapshotMeta,
 } from './model';
 import { previewRestore } from './restore';
 import { SnapshotService } from './service';
@@ -41,19 +43,47 @@ beforeEach(() => {
   time = T0;
 });
 
+const meta = (kind: SnapshotMeta['kind'], date: string, takenAt = 0): SnapshotMeta => ({
+  id: kind === 'day' ? date : `before-${takenAt}`,
+  kind,
+  date,
+  takenAt,
+  noteCount: 0,
+  groupCount: 0,
+  chunks: 1,
+  bytes: 1,
+});
+
 describe('days and keeping', () => {
   it('names days by the local calendar date', () => {
     expect(dateKey(new Date(2026, 0, 5, 23, 59).getTime())).toBe('2026-01-05');
-    expect(addDays('2026-03-01', -1)).toBe('2026-02-28');
-    expect(addDays('2026-12-31', 1)).toBe('2027-01-01');
   });
 
-  it('keeps today and the 29 days before it, drops the rest', () => {
-    const today = '2026-10-30';
-    expect(isExpired('2026-10-30', today)).toBe(false);
-    expect(isExpired('2026-10-01', today)).toBe(false); // 29 days ago: the oldest kept
-    expect(isExpired('2026-09-30', today)).toBe(true); // 30 days ago
-    expect(isExpired('2026-01-01', today)).toBe(true);
+  it('keeps the newest 30 daily copies and drops only the older ones', () => {
+    const copies = Array.from({ length: 35 }, (_, i) => meta('day', dateKey(T0 + i * DAY), T0 + i * DAY));
+    const doomed = expiredSnapshots(copies);
+    expect(SNAPSHOT_KEEP).toBe(30);
+    expect(doomed).toHaveLength(5);
+    expect(doomed.map((m) => m.date).sort()).toEqual(copies.slice(0, 5).map((m) => m.date).sort());
+  });
+
+  it('never deletes by age: a long break from the app costs nothing', () => {
+    const longAgo = Array.from({ length: 30 }, (_, i) => meta('day', dateKey(T0 - (400 + i) * DAY), T0 - (400 + i) * DAY));
+    expect(expiredSnapshots(longAgo)).toEqual([]);
+  });
+
+  it('keeps fewer than 30 untouched', () => {
+    expect(expiredSnapshots([meta('day', '2026-10-01'), meta('day', '2026-10-02')])).toEqual([]);
+  });
+
+  it('keeps the safety copies made before restores apart, a few at a time', () => {
+    const days = Array.from({ length: 30 }, (_, i) => meta('day', dateKey(T0 + i * DAY), T0 + i * DAY));
+    const before = Array.from({ length: 8 }, (_, i) => meta('before-restore', dateKey(T0), T0 + i * 1000));
+    const doomed = expiredSnapshots([...days, ...before]);
+    expect(BEFORE_RESTORE_KEEP).toBe(5);
+    expect(doomed).toHaveLength(3);
+    expect(doomed.every((m) => m.kind === 'before-restore')).toBe(true);
+    expect(Math.max(...doomed.map((m) => m.takenAt))).toBeLessThan(Math.min(...before.slice(3).map((m) => m.takenAt)));
   });
 });
 
@@ -92,71 +122,143 @@ describe('the snapshot file', () => {
   });
 });
 
-describe('the daily snapshot', () => {
-  function service(over: { db: TodoDB }) {
+describe('the copy made when the app is left', () => {
+  function service(db: TodoDB, uid = 'u') {
     const store = new FakeSnapshotStore();
-    return { store, svc: new SnapshotService({ db: over.db, store, now: () => time }) };
+    return { store, svc: new SnapshotService({ db, store, uid, now: () => time }) };
   }
 
-  it('writes one on the first run of a day and then only when something changed', async () => {
+  it('is kept on the device first, and uploads nothing by itself', async () => {
     const { db, notes } = setup();
-    const { store, svc } = service({ db });
+    const { store, svc } = service(db);
+    await note(notes, 'ნოტა', 'x');
+
+    expect(await svc.capture()).toBe('captured');
+    expect(store.writes).toBe(0);
+    expect(await svc.waiting()).toBe(1);
+  });
+
+  it('is uploaded later under the day it was made, not the day it is uploaded', async () => {
+    const { db, notes } = setup();
+    const { store, svc } = service(db);
+    await note(notes, 'ნოტა', 'საღამოს ტექსტი');
+    await svc.capture(); // evening of day 1, app closed, no connection
+
+    time = T0 + 20 * HOUR; // next morning
+    expect(await svc.flush()).toBe(1);
+
+    const stored = [...store.metas.values()];
+    expect(stored.map((m) => m.date)).toEqual([dateKey(T0)]);
+    expect(dateKey(time)).not.toBe(dateKey(T0));
+    expect(await svc.waiting()).toBe(0);
+    expect((await svc.load(stored[0]!)).notes[0]?.body).toBe('საღამოს ტექსტი');
+  });
+
+  it('does not make another copy when nothing changed', async () => {
+    const { db, notes } = setup();
+    const { svc } = service(db);
+    await note(notes, 'ნოტა', 'x');
+    await svc.capture();
+    expect(await svc.capture()).toBe('unchanged');
+    expect(await svc.waiting()).toBe(1);
+  });
+
+  it('a later copy on the same day replaces the earlier one: the day holds its last state', async () => {
+    const { db, notes } = setup();
+    const { store, svc } = service(db);
+    const id = await note(notes, 'ნოტა', 'დილით');
+    await svc.capture();
+    await notes.update(id, { body: 'საღამოთი' });
+    time += 5 * HOUR;
+    await svc.capture();
+    expect(await svc.waiting()).toBe(1);
+
+    await svc.flush();
+    const [stored] = [...store.metas.values()];
+    expect((await svc.load(stored!)).notes.find((n) => n.id === id)?.body).toBe('საღამოთი');
+  });
+
+  it('stays on the device if the upload fails, and goes up when it works', async () => {
+    const { db, notes } = setup();
+    const { store, svc } = service(db);
+    await note(notes, 'ნოტა', 'x');
+    await svc.capture();
+
+    store.offline = true;
+    await expect(svc.flush()).rejects.toMatchObject({ code: 'unavailable' });
+    expect(await svc.waiting()).toBe(1);
+
+    store.offline = false;
+    expect(await svc.flush()).toBe(1);
+    expect(store.metas.size).toBe(1);
+  });
+
+  it('never uploads a copy that belongs to another account', async () => {
+    const { db, notes } = setup();
+    const first = service(db, 'account-1');
+    await note(notes, 'ნოტა', 'x');
+    await first.svc.capture();
+
+    const second = service(db, 'account-2');
+    expect(await second.svc.flush()).toBe(0);
+    expect(second.store.writes).toBe(0);
+    expect(await first.svc.waiting()).toBe(1);
+  });
+
+  it('keeps the last 30 and removes the oldest when a new day is added', async () => {
+    const { db, notes } = setup();
+    const { store, svc } = service(db);
     const id = await note(notes, 'ნოტა', 'x');
-
-    expect(await svc.maybeTake()).toBe('written');
-    expect(store.writes).toBe(1);
-    expect(await svc.maybeTake()).toBe('unchanged');
-    expect(store.writes).toBe(1);
-
-    await notes.update(id, { body: 'edited' });
-    time = T0 + 10 * 60_000; // 10 minutes later
-    expect(await svc.maybeTake()).toBe('too-soon');
-    time = T0 + 45 * 60_000; // 45 minutes later
-    expect(await svc.maybeTake()).toBe('written');
-    expect(store.writes).toBe(2);
-    expect(store.metas.size).toBe(1); // same day, same entry: it holds the day's LAST state
-  });
-
-  it('the entry for a day holds the last state of that day', async () => {
-    const { db, notes } = setup();
-    const { svc } = service({ db });
-    const id = await note(notes, 'ნოტა', 'morning');
-    await svc.maybeTake();
-    await notes.update(id, { body: 'evening' });
-    time = T0 + 5 * HOUR;
-    await svc.maybeTake();
-
-    const [meta] = await svc.list();
-    const data = await svc.load(meta!);
-    expect(data.notes.find((n) => n.id === id)?.body).toBe('evening');
-  });
-
-  it('starts a new entry on a new day, and drops entries older than 30 days', async () => {
-    const { db, notes } = setup();
-    const { store, svc } = service({ db });
-    await note(notes, 'a', 'b');
-    await svc.maybeTake();
-    const firstDay = dateKey(T0);
-
-    for (let day = 1; day <= 31; day += 1) {
+    for (let day = 0; day < 32; day += 1) {
       time = T0 + day * DAY;
-      await svc.maybeTake();
+      await notes.update(id, { body: `დღე ${day}` });
+      await svc.capture();
+      await svc.flush();
     }
     const dates = [...store.metas.values()].map((m) => m.date).sort();
     expect(dates).toHaveLength(30);
-    expect(dates).not.toContain(firstDay);
-    expect(dates.at(-1)).toBe(dateKey(T0 + 31 * DAY));
     expect(dates[0]).toBe(dateKey(T0 + 2 * DAY));
+    expect(dates.at(-1)).toBe(dateKey(T0 + 31 * DAY));
+  });
+
+  it('after months without using the app, all copies are still there', async () => {
+    const { db, notes } = setup();
+    const { store, svc } = service(db);
+    const id = await note(notes, 'ნოტა', 'x');
+    for (let day = 0; day < 30; day += 1) {
+      time = T0 + day * DAY;
+      await notes.update(id, { body: `დღე ${day}` });
+      await svc.capture();
+      await svc.flush();
+    }
+    time = T0 + 400 * DAY; // over a year later
+    expect(await svc.cleanup()).toBe(0);
+    expect(store.metas.size).toBe(30);
+    await notes.update(id, { body: 'ბოლოს' });
+    await svc.capture();
+    await svc.flush();
+    expect(store.metas.size).toBe(30); // one new, the oldest gone
+    expect([...store.metas.values()].some((m) => m.date === dateKey(T0))).toBe(false);
+  });
+
+  it('"back up now" counts as the day\'s copy and replaces the one waiting', async () => {
+    const { db, notes } = setup();
+    const { store, svc } = service(db);
+    await note(notes, 'ნოტა', 'x');
+    await svc.capture();
+    time += 10 * 60_000;
+    await svc.take('day');
+    expect(store.metas.size).toBe(1);
+    expect(await svc.waiting()).toBe(0);
   });
 
   it('counts only live notes in the list entry', async () => {
     const { db, notes } = setup();
-    const { svc } = service({ db });
+    const { svc } = service(db);
     await note(notes, 'live');
     const gone = await note(notes, 'trashed');
     await notes.moveToTrash(gone);
-    const meta = await svc.take('day');
-    expect(meta).toMatchObject({ noteCount: 1, kind: 'day', date: dateKey(T0) });
+    expect(await svc.take('day')).toMatchObject({ noteCount: 1, kind: 'day', date: dateKey(time) });
   });
 });
 
@@ -164,7 +266,7 @@ describe('restoring the whole app', () => {
   async function scenario() {
     const { db, notes, groups } = setup();
     const store = new FakeSnapshotStore();
-    const svc = new SnapshotService({ db, store, now: () => time });
+    const svc = new SnapshotService({ db, store, uid: 'u', now: () => time });
     const group = await groups.create({ name: 'სამსახური' });
     const kept = await note(notes, 'დარჩენილი', 'ძველი ტექსტი');
     await notes.update(kept, { groupId: group.id, pinned: true });
@@ -247,7 +349,7 @@ describe('restoring only what is lost', () => {
   it('brings back missing and trashed notes and leaves everything else as it is', async () => {
     const { db, notes } = setup();
     const store = new FakeSnapshotStore();
-    const svc = new SnapshotService({ db, store, now: () => time });
+    const svc = new SnapshotService({ db, store, uid: 'u', now: () => time });
     const edited = await note(notes, 'ჩემი', 'ძველი');
     const trashed = await note(notes, 'ნაგავში გადავა', 'a');
     const purged = await note(notes, 'სამუდამოდ წაიშლება', 'b');
@@ -292,7 +394,7 @@ describe('restoring while synced', () => {
     await b.engine.start();
     await settle(a, b);
 
-    const svc = new SnapshotService({ db: a.db, store: new FakeSnapshotStore(), now: () => time });
+    const svc = new SnapshotService({ db: a.db, store: new FakeSnapshotStore(), uid: 'u', now: () => time });
     const snapshot = await svc.take('day');
 
     time += DAY;

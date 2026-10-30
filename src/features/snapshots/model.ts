@@ -1,7 +1,10 @@
 import { parseGroup, type Group } from '@/features/groups/model';
 import { parseNote, type Note } from '@/features/notes/model';
 
-export const SNAPSHOT_KEEP_DAYS = 30;
+/** How many daily copies are kept. The oldest goes when a new one is written; age does not matter. */
+export const SNAPSHOT_KEEP = 30;
+/** The safety copies made just before a restore are kept apart, a few at a time. */
+export const BEFORE_RESTORE_KEEP = 5;
 /** Firestore documents are limited to 1 MiB, so a snapshot is split into pieces below that. */
 export const CHUNK_BYTES = 700_000;
 
@@ -42,14 +45,20 @@ export function dateKey(ms: number): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-export function addDays(key: string, days: number): string {
-  const [y, m, d] = key.split('-').map(Number) as [number, number, number];
-  return dateKey(new Date(y, m - 1, d + days, 12).getTime());
-}
-
-/** Snapshots from the last `keepDays` days (today included) stay; older ones go. */
-export function isExpired(date: string, today: string, keepDays: number = SNAPSHOT_KEEP_DAYS): boolean {
-  return date < addDays(today, -(keepDays - 1));
+/**
+ * Which copies to delete: all but the newest SNAPSHOT_KEEP daily ones, and all but the newest few
+ * safety copies. Judged by count, never by age, so a long break from the app costs nothing.
+ */
+export function expiredSnapshots(
+  metas: SnapshotMeta[],
+  keepDays: number = SNAPSHOT_KEEP,
+  keepBefore: number = BEFORE_RESTORE_KEEP,
+): SnapshotMeta[] {
+  const days = metas
+    .filter((m) => m.kind === 'day')
+    .sort((a, b) => (a.date === b.date ? b.takenAt - a.takenAt : a.date < b.date ? 1 : -1));
+  const before = metas.filter((m) => m.kind === 'before-restore').sort((a, b) => b.takenAt - a.takenAt);
+  return [...days.slice(keepDays), ...before.slice(keepBefore)];
 }
 
 /** A short fingerprint of "what the notes look like", to notice whether anything changed. */

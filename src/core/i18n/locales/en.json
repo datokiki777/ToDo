@@ -216,7 +216,7 @@
   },
   "snapshots": {
     "title": "Backups",
-    "intro": "The last state of each day is kept for {{days}} days. You can put the app back the way it was on any of them.",
+    "intro": "The last state of each day is saved when you leave the app (close it or switch to another). The last {{count}} backups are kept: the oldest goes when a new one is added, and backups aren't lost if you don't open the app for a long time. A backup made with no internet is uploaded the next time you open the app and keeps the date of the day it was made.",
     "show": "Show backups",
     "refresh": "Refresh list",
     "takeNow": "Back up now",
@@ -242,6 +242,7 @@
     "errorGeneric": "Something is wrong with backups ({{code}}). Try again later.",
     "errorBroken": "This backup is damaged and can't be read. Nothing was changed.",
     "errorOffline": "No connection.",
-    "errorAuto": "The automatic backup couldn't be made ({{code}}). Try “Back up now”."
+    "errorAuto": "The automatic backup couldn't be made ({{code}}). Try “Back up now”.",
+    "waiting": "{{count}} backup is waiting to be uploaded. It goes when the internet is back or when you open the app."
   }
 }
