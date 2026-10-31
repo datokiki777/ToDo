@@ -144,6 +144,11 @@ function unique(links: NoteLink[]): NoteLink[] {
   return links.filter((link) => (seen.has(link.url) ? false : (seen.add(link.url), true)));
 }
 
+/** Every link in one line of text (a checklist row), each once, in the order written. */
+export function rowLinks(text: string): NoteLink[] {
+  return unique(extractLinks(text));
+}
+
 /** Links written in the title or the text of a note (not in checklist rows). */
 export function textLinks(note: Pick<Note, 'title' | 'body'>): NoteLink[] {
   return unique([...extractLinks(note.title), ...extractLinks(note.body)]);

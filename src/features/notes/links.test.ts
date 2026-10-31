@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { asOnlyLink, extractLinks, noteLinks, textLinks } from './links';
+import { asOnlyLink, extractLinks, noteLinks, rowLinks, textLinks } from './links';
 
 const urls = (text: string) => extractLinks(text).map((l) => l.url);
 
@@ -201,5 +201,26 @@ describe('phone numbers inside notes', () => {
   it('a line that is only a number is described as one', () => {
     expect(asOnlyLink(' +995 555 12 34 56 ')).toMatchObject({ kind: 'phone', url: 'tel:+995555123456' });
     expect(asOnlyLink('გიორგი 555 12 34 56')).toBeNull();
+  });
+});
+
+describe('a checklist row with a phone number AND a map link', () => {
+  // the rows of a real note: both the number and the location must stay usable
+  const rows = [
+    ['კოდს რო გაძლევს +4915114000029 https://maps.app.goo.gl/KbG3rmbSwsZqqEFFA', ['tel:+4915114000029', 'https://maps.app.goo.gl/KbG3rmbSwsZqqEFFA']],
+    ['ჰერფორდში, კალონკაზე +4917674898684 https://maps.app.goo.gl/WKydrZFa8UxJDmA19', ['tel:+4917674898684', 'https://maps.app.goo.gl/WKydrZFa8UxJDmA19']],
+    ['ვერთაში  +4917684315078', ['tel:+4917684315078']],
+    ['პადერბრონში  +495254 9478378 https://maps.app.goo.gl/zfLLJHVTSLDjC2vs6', ['tel:+4952549478378', 'https://maps.app.goo.gl/zfLLJHVTSLDjC2vs6']],
+  ] as const;
+
+  it.each(rows)('finds every link in: %s', (text, urls) => {
+    expect(rowLinks(text).map((l) => l.url)).toEqual(urls);
+  });
+
+  it('keeps the order of the text and lists a repeated link once', () => {
+    expect(rowLinks('https://a.com/x და 555 12 34 56 და https://a.com/x და 555123456').map((l) => l.kind)).toEqual([
+      'web',
+      'phone',
+    ]);
   });
 });

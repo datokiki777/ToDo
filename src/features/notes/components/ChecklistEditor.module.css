@@ -70,3 +70,15 @@
 .open:active {
   background: color-mix(in srgb, var(--note-accent) 25%, transparent);
 }
+
+/* A row can hold several links (a phone number and a place): one button each, stacked. */
+.links {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  margin-top: 2px;
+}
+.links .open {
+  height: 40px;
+  margin-top: 0;
+}

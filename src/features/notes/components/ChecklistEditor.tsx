@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { newId } from '@/core/id';
 import { applyItemInput } from '../checklist';
 import { linkLabel, linkTarget } from '../linkProps';
-import { extractLinks } from '../links';
+import { rowLinks } from '../links';
 import { AutoTextarea } from './AutoTextarea';
 import { LinkIcon } from './LinkIcon';
 import type { ChecklistItem } from '../model';
@@ -61,7 +61,7 @@ export function ChecklistEditor({ items, onChange, readOnly }: Props) {
   return (
     <div className={styles.list}>
       {items.map((item, index) => {
-        const link = extractLinks(item.text)[0];
+        const links = rowLinks(item.text);
         return (
         <div key={item.id} className={styles.row}>
           <input
@@ -86,16 +86,21 @@ export function ChecklistEditor({ items, onChange, readOnly }: Props) {
             onValueChange={(value) => type(item.id, value)}
             onKeyDown={(event) => onKeyDown(event, index, item)}
           />
-          {link && (
-            <a
-              className={styles.open}
-              href={link.url}
-              {...linkTarget(link)}
-              aria-label={linkLabel(t, link)}
-              title={linkLabel(t, link)}
-            >
-              <LinkIcon kind={link.kind} size={19} />
-            </a>
+          {links.length > 0 && (
+            <div className={styles.links}>
+              {links.map((link) => (
+                <a
+                  key={link.url}
+                  className={styles.open}
+                  href={link.url}
+                  {...linkTarget(link)}
+                  aria-label={linkLabel(t, link)}
+                  title={linkLabel(t, link)}
+                >
+                  <LinkIcon kind={link.kind} size={19} />
+                </a>
+              ))}
+            </div>
           )}
           {!readOnly && (
             <button
