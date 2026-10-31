@@ -20,6 +20,7 @@ import { PageHeader } from '@/core/ui/PageHeader';
 import { useToasts } from '@/core/ui/toasts';
 import { GroupSheet, type GroupValues } from '@/features/groups/components/GroupSheet';
 import { GroupStrip } from '@/features/groups/components/GroupStrip';
+import { colorForNewNote } from '@/features/groups/defaults';
 import { useGroups } from '@/features/groups/hooks';
 import type { Group } from '@/features/groups/model';
 import { groupsRepository } from '@/features/groups/repository';
@@ -79,7 +80,7 @@ export function NotesPage({ mode }: { mode: NotesView }) {
     setFabOpen(false);
     const note = await notesRepository.create({
       kind,
-      color: activeColor ?? undefined,
+      color: colorForNewNote(activeColor, selectedGroup),
       groupId: activeGroupId,
     });
     navigate(`/note/${note.id}`);

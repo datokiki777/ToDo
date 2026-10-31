@@ -5,6 +5,7 @@ import { formatDayShort, formatShortDate } from '@/core/time';
 import type { ViewMode } from '@/core/settings/store';
 import { GroupIcon } from '@/features/groups/icons';
 import type { Group } from '@/features/groups/model';
+import { linkLabel, linkTarget } from '../linkProps';
 import { asOnlyLink, noteLinks } from '../links';
 import { checklistProgress, displayTitle, hasChecklist, previewLines, type Note } from '../model';
 import { LinkIcon } from './LinkIcon';
@@ -32,7 +33,7 @@ export function NoteCard({ note, view, group, daysLeft }: Props) {
   const onlyLink = asOnlyLink(rawTitle);
   if (onlyLink) {
     title = onlyLink.label;
-    preview.unshift(onlyLink.short);
+    if (onlyLink.kind !== 'phone') preview.unshift(onlyLink.short); // a number needs no second line
   }
 
   return (
@@ -84,10 +85,9 @@ export function NoteCard({ note, view, group, daysLeft }: Props) {
       <a
         className={styles.open}
         href={single.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={t('links.openLink', { label: single.label })}
-        title={t('links.openLink', { label: single.label })}
+        {...linkTarget(single)}
+        aria-label={linkLabel(t, single)}
+        title={linkLabel(t, single)}
       >
         <LinkIcon kind={single.kind} size={21} />
       </a>

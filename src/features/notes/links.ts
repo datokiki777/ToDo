@@ -1,12 +1,12 @@
 import type { Note } from './model';
 
-export type LinkKind = 'maps' | 'web';
+export type LinkKind = 'maps' | 'web' | 'phone';
 
 export interface NoteLink {
-  /** Always a full http(s) address, safe to put in an <a href>. */
+  /** A full http(s) address, or "tel:+995..." for a phone number. Safe to put in an <a href>. */
   url: string;
   kind: LinkKind;
-  /** "Google Maps" for map links, otherwise the site name. */
+  /** "Google Maps" for map links, the site name for web links, the number as written for phones. */
   label: string;
   /** A short readable form of the address, for lists. */
   short: string;
@@ -79,19 +79,62 @@ function describe(url: URL): NoteLink {
 interface Found {
   raw: string;
   link: NoteLink;
+  index: number;
+}
+
+// A run of digits, written with spaces, dots, hyphens or brackets: "+995 555 12-34-56".
+// Never longer than one line, and never glued to letters or other digits.
+const PHONE_RUN = /(?<![\p{L}\p{N}_])[+(]?\d[\d ().\-\u00A0\t]{5,24}\d(?![\p{L}\p{N}_])/gu;
+
+/**
+ * Turns what was written into an international number ("+995555123456"), or null when it does
+ * not look like a phone number. Deliberately strict, so dates, prices, ID codes and coordinates
+ * are left alone: it needs a "+" (or "00") with 8-15 digits, or a Georgian mobile (9 digits
+ * starting with 5), a Georgian number with the leading 0 (10 digits), or 995 followed by 9 digits.
+ */
+export function normalizePhone(raw: string): string | null {
+  const text = raw.trim();
+  const digits = text.replace(/\D/g, '');
+  const international = (d: string) => (d.length >= 8 && d.length <= 15 ? `+${d}` : null);
+  if (text.startsWith('+')) return international(digits);
+  if (digits.startsWith('00')) return international(digits.slice(2));
+  if (/^995\d{9}$/.test(digits)) return `+${digits}`;
+  if (/^5\d{8}$/.test(digits)) return `+995${digits}`;
+  if (/^0[1-9]\d{8}$/.test(digits)) return `+995${digits.slice(1)}`;
+  return null;
+}
+
+function findPhones(text: string, urls: Found[]): Found[] {
+  // Digits inside web addresses (ids, coordinates) are not phone numbers: blank them out first.
+  let masked = text;
+  for (const found of urls) {
+    masked = masked.slice(0, found.index) + ' '.repeat(found.raw.length) + masked.slice(found.index + found.raw.length);
+  }
+  const phones: Found[] = [];
+  for (const match of masked.matchAll(PHONE_RUN)) {
+    const raw = match[0].trim();
+    const e164 = normalizePhone(raw);
+    if (!e164) continue;
+    phones.push({
+      raw,
+      index: match.index,
+      link: { url: `tel:${e164}`, kind: 'phone', label: raw.replace(/\s+/g, ' '), short: raw.replace(/\s+/g, ' ') },
+    });
+  }
+  return phones;
 }
 
 function find(text: string): Found[] {
-  const found: Found[] = [];
+  const urls: Found[] = [];
   for (const match of text.matchAll(URL_PATTERN)) {
     const raw = trimTrailing(match[0]);
     const url = toHttpUrl(raw);
-    if (url) found.push({ raw, link: describe(url) });
+    if (url) urls.push({ raw, link: describe(url), index: match.index });
   }
-  return found;
+  return [...urls, ...findPhones(text, urls)].sort((a, b) => a.index - b.index);
 }
 
-/** Every web address in a piece of text, in order. */
+/** Every web address and phone number in a piece of text, in order. */
 export function extractLinks(text: string): NoteLink[] {
   return find(text).map((f) => f.link);
 }
@@ -115,7 +158,7 @@ export function noteLinks(note: Pick<Note, 'title' | 'body' | 'items'>): NoteLin
   ]);
 }
 
-/** If a line is nothing but one address, describe it; otherwise null. */
+/** If a line is nothing but one address or phone number, describe it; otherwise null. */
 export function asOnlyLink(line: string): NoteLink | null {
   const text = line.trim();
   const found = find(text);

@@ -127,6 +127,7 @@ describe('decideGroup', () => {
     name: 'n',
     icon: 'folder',
     color: 'blue',
+    noteColor: null,
     createdAt: 1,
     updatedAt: 100,
     deletedAt: null,

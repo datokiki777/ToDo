@@ -146,6 +146,20 @@ describe('keeping devices in step', () => {
     expect((await a.notes.get(id))?.body).toBe('შეცვლილი ტექსტი');
   });
 
+  it('a group keeps the colour it gives to new notes when it travels to another device', async () => {
+    const a = device('a');
+    const b = device('b');
+    const group = await a.groups.create({ name: 'სამსახური', color: 'blue', noteColor: 'red' });
+    await a.engine.start();
+    await b.engine.start();
+    await settle(a, b);
+    expect((await b.groups.getAll())[0]).toMatchObject({ id: group.id, color: 'blue', noteColor: 'red' });
+
+    await b.groups.update(group.id, { noteColor: null });
+    await settle(a, b);
+    expect((await a.groups.getAll())[0]?.noteColor).toBeNull();
+  });
+
   it('trash and restore travel too', async () => {
     const a = device('a');
     const b = device('b');

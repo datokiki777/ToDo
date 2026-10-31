@@ -132,7 +132,7 @@
     "name": "Name",
     "namePlaceholder": "e.g. Work",
     "icon": "Icon",
-    "color": "Color",
+    "color": "Group colour",
     "save": "Save",
     "delete": "Delete group",
     "deleteTitle": "Delete “{{name}}”?",
@@ -141,13 +141,18 @@
     "noGroup": "No group",
     "choose": "Choose a group",
     "empty": "No notes in this group yet",
-    "emptyHint": "Tap + and the new note will be created in this group."
+    "emptyHint": "Tap + and the new note will be created in this group.",
+    "noteColor": "Note colour in this group",
+    "noteColorHint": "New notes in this group start with this colour. You can always change it by hand in the note.",
+    "noteColorAuto": "Automatic"
   },
   "links": {
     "title": "Links",
     "openLink": "Open {{label}}",
     "count_one": "{{count}} link",
-    "count_other": "{{count}} links"
+    "count_other": "{{count}} links",
+    "call": "Tap to call",
+    "callLink": "Call {{label}}"
   },
   "share": {
     "copied": "Text copied",

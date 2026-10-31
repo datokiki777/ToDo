@@ -1,0 +1,30 @@
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-left: -2px;
+}
+.target {
+  display: grid;
+  place-items: center;
+  width: 33px;
+  height: var(--tap);
+}
+.dot {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--note-accent);
+  color: #fff;
+}
+.auto {
+  border: 1.5px dashed var(--muted);
+  background: transparent;
+  color: var(--muted);
+}
+.on {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}

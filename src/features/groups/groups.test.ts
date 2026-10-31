@@ -134,3 +134,29 @@ describe('database upgrade from version 1', () => {
     upgraded.close();
   });
 });
+
+describe('the colour new notes get in a group', () => {
+  it('is chosen when the group is made, changed later, and cleared', async () => {
+    const { groups: repo } = (() => {
+      const db = new TodoDB(`gc-${crypto.randomUUID()}`);
+      return { groups: createGroupsRepository(db) };
+    })();
+    const g = await repo.create({ name: 'სამსახური', noteColor: 'red' });
+    expect(g.noteColor).toBe('red');
+    await repo.update(g.id, { noteColor: 'green' });
+    expect((await repo.getAll())[0]?.noteColor).toBe('green');
+    await repo.update(g.id, { noteColor: null });
+    expect((await repo.getAll())[0]?.noteColor).toBeNull();
+    await repo.update(g.id, { name: 'ახალი სახელი' }); // changing something else leaves it alone
+    expect((await repo.getAll())[0]?.noteColor).toBeNull();
+  });
+
+  it('starts as "no preference" and old groups read that way too', async () => {
+    const db = new TodoDB(`gc-${crypto.randomUUID()}`);
+    const repo = createGroupsRepository(db);
+    expect((await repo.create({ name: 'a' })).noteColor).toBeNull();
+    expect(parseGroup({ id: 'old', name: 'ძველი', updatedAt: 1 })?.noteColor).toBeNull();
+    expect(parseGroup({ id: 'x', name: 'x', updatedAt: 1, noteColor: 'pink' })?.noteColor).toBeNull();
+    expect(parseGroup({ id: 'x', name: 'x', updatedAt: 1, noteColor: 'teal' })?.noteColor).toBe('teal');
+  });
+});

@@ -55,6 +55,7 @@ export function groupToCloud(group: Group): Record<string, unknown> {
     name: group.name,
     icon: group.icon,
     color: group.color,
+    noteColor: group.noteColor,
     createdAt: group.createdAt,
     updatedAt: group.updatedAt,
     deletedAt: group.deletedAt,

@@ -19,6 +19,8 @@ import { ConfirmDialog } from '@/core/ui/ConfirmDialog';
 import { IconButton } from '@/core/ui/IconButton';
 import { useToasts } from '@/core/ui/toasts';
 import { DateSheet } from '@/features/calendar/components/DateSheet';
+import { colorWhenJoining } from '@/features/groups/defaults';
+import type { Group } from '@/features/groups/model';
 import { GroupPickerSheet } from '@/features/groups/components/GroupPickerSheet';
 import { GroupSheet, type GroupValues } from '@/features/groups/components/GroupSheet';
 import { useGroups } from '@/features/groups/hooks';
@@ -178,14 +180,15 @@ function Editor({ note }: { note: Note }) {
 
   const setColor = (color: NoteColor) => void notesRepository.update(note.id, { color });
 
-  const setGroup = (groupId: string | null) => {
+  // A note nothing is written in yet takes the group's colour; one with text keeps its own.
+  const assignGroup = (target: Group | null) => {
     setSheet(null);
-    void notesRepository.update(note.id, { groupId });
+    const color = colorWhenJoining(isNoteEmpty(draft), target);
+    void notesRepository.update(note.id, { groupId: target?.id ?? null, ...(color ? { color } : {}) });
   };
 
   const createGroup = async (values: GroupValues) => {
-    const created = await groupsRepository.create(values);
-    setGroup(created.id);
+    assignGroup(await groupsRepository.create(values));
   };
 
   // Called straight from the tap, as the phone requires for its share menu.
@@ -375,7 +378,7 @@ function Editor({ note }: { note: Note }) {
         open={sheet === 'pick'}
         groups={groups ?? []}
         value={note.groupId}
-        onSelect={setGroup}
+        onSelect={(groupId) => assignGroup(groups?.find((g) => g.id === groupId) ?? null)}
         onCreate={() => setSheet('create')}
         onClose={() => setSheet(null)}
       />

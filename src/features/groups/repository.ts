@@ -13,6 +13,8 @@ export interface GroupInput {
   name: string;
   icon?: GroupIconName;
   color?: NoteColor;
+  /** Colour for new notes in the group; null clears it. */
+  noteColor?: NoteColor | null;
 }
 
 export interface GroupsRepository {
@@ -49,6 +51,7 @@ export function createGroupsRepository(
         name,
         icon: input.icon ?? DEFAULT_GROUP_ICON,
         color: input.color ?? DEFAULT_GROUP_COLOR,
+        noteColor: input.noteColor ?? null,
         createdAt: t,
         updatedAt: t,
         deletedAt: null,
@@ -66,6 +69,7 @@ export function createGroupsRepository(
       }
       if (patch.icon !== undefined) changes.icon = patch.icon;
       if (patch.color !== undefined) changes.color = patch.color;
+      if (patch.noteColor !== undefined) changes.noteColor = patch.noteColor;
       await db.groups.update(id, changes);
     },
 

@@ -4,6 +4,7 @@ import { Sheet } from '@/core/ui/Sheet';
 import { ColorPicker } from '@/features/notes/components/ColorPicker';
 import type { NoteColor } from '@/features/notes/model';
 import { GroupIcon } from '../icons';
+import { NoteColorChoice } from './NoteColorChoice';
 import {
   DEFAULT_GROUP_COLOR,
   DEFAULT_GROUP_ICON,
@@ -19,6 +20,8 @@ export interface GroupValues {
   name: string;
   icon: GroupIconName;
   color: NoteColor;
+  /** Colour for new notes in this group, or null for none. */
+  noteColor: NoteColor | null;
 }
 
 interface Props {
@@ -44,11 +47,12 @@ function GroupForm({ group, onSave, onDelete }: Pick<Props, 'group' | 'onSave' |
   const [name, setName] = useState(group?.name ?? '');
   const [icon, setIcon] = useState<GroupIconName>(group?.icon ?? DEFAULT_GROUP_ICON);
   const [color, setColor] = useState<NoteColor>(group?.color ?? DEFAULT_GROUP_COLOR);
+  const [noteColor, setNoteColor] = useState<NoteColor | null>(group?.noteColor ?? null);
   const valid = normalizeGroupName(name) !== '';
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (valid) void onSave({ name, icon, color });
+    if (valid) void onSave({ name, icon, color, noteColor });
   };
 
   return (
@@ -88,6 +92,12 @@ function GroupForm({ group, onSave, onDelete }: Pick<Props, 'group' | 'onSave' |
       <div className={styles.field}>
         <span className={styles.label}>{t('groups.color')}</span>
         <ColorPicker value={color} onChange={setColor} />
+      </div>
+
+      <div className={styles.field}>
+        <span className={styles.label}>{t('groups.noteColor')}</span>
+        <NoteColorChoice value={noteColor} onChange={setNoteColor} />
+        <span className={styles.hint}>{t('groups.noteColorHint')}</span>
       </div>
 
       <div className={styles.actions}>

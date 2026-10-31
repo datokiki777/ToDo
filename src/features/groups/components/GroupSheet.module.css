@@ -71,3 +71,9 @@
     background: color-mix(in srgb, var(--danger) 10%, transparent);
   }
 }
+
+.hint {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}

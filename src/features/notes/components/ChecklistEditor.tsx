@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { newId } from '@/core/id';
 import { applyItemInput } from '../checklist';
+import { linkLabel, linkTarget } from '../linkProps';
 import { extractLinks } from '../links';
 import { AutoTextarea } from './AutoTextarea';
 import { LinkIcon } from './LinkIcon';
@@ -89,10 +90,9 @@ export function ChecklistEditor({ items, onChange, readOnly }: Props) {
             <a
               className={styles.open}
               href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={t('links.openLink', { label: link.label })}
-              title={t('links.openLink', { label: link.label })}
+              {...linkTarget(link)}
+              aria-label={linkLabel(t, link)}
+              title={linkLabel(t, link)}
             >
               <LinkIcon kind={link.kind} size={19} />
             </a>

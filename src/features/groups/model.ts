@@ -39,7 +39,10 @@ export interface Group {
   id: string;
   name: string;
   icon: GroupIconName;
+  /** The group's own colour: its icon and card. */
   color: NoteColor;
+  /** The colour new notes in this group start with; null = no preference. Always changeable by hand. */
+  noteColor: NoteColor | null;
   createdAt: number;
   updatedAt: number;
   deletedAt: number | null;
@@ -69,6 +72,7 @@ export function parseGroup(raw: unknown): Group | null {
     name,
     icon: isGroupIcon(r.icon) ? r.icon : DEFAULT_GROUP_ICON,
     color: isNoteColor(r.color) ? r.color : DEFAULT_GROUP_COLOR,
+    noteColor: isNoteColor(r.noteColor) ? r.noteColor : null,
     createdAt,
     updatedAt,
     deletedAt,
