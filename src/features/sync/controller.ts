@@ -18,6 +18,7 @@ const OFF: SyncStatus = {
   pushed: 0,
   conflicts: 0,
   failed: 0,
+  failedReason: null,
 };
 
 interface SyncUi {

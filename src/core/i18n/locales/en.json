@@ -208,7 +208,7 @@
     "follower": "Syncing is running in another window of this app.",
     "conflicts_one": "{{count}} copy was made: one note changed on both devices and no text was lost. Look for “(copy)” in the title.",
     "conflicts_other": "{{count}} copies were made: notes changed on both devices and no text was lost. Look for “(copy)” in the titles.",
-    "failed": "{{count}} note(s) couldn't be uploaded (too large).",
+    "failed": "{{count}} item(s) couldn't be uploaded (error: {{code}}). The changes are safe on this device; try “Sync now”.",
     "conflictCopy": "(copy)",
     "errorPermission": "The rules don't allow access. Paste docs/firestore.rules into Firestore → Rules and publish.",
     "errorOffline": "No connection. Changes will upload when the internet is back.",
@@ -220,7 +220,8 @@
     "mismatchReset": "Back up and clear",
     "mismatchConfirmTitle": "Delete this phone's notes?",
     "mismatchConfirmBody": "A backup file is downloaded first, then every note and group on this phone is deleted and this account's notes come in.",
-    "mismatchConfirm": "Back up and delete"
+    "mismatchConfirm": "Back up and delete",
+    "failedTooLarge": "{{count}} item(s) couldn't be uploaded: too large. The changes are safe on this device."
   },
   "snapshots": {
     "title": "Backups",

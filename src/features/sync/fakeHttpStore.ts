@@ -1,4 +1,4 @@
-import type { CloudDoc, CloudStore, Collection } from './cloud';
+import { findUndefined, type CloudDoc, type CloudStore, type Collection } from './cloud';
 
 /**
  * Test build only (VITE_FAKE_AUTH=1): a "cloud" that lives in the test server, reached by polling,
@@ -40,6 +40,9 @@ export function createFakeHttpStore(uid: string): CloudStore {
     },
 
     async write(items) {
+      if (items.some((item) => findUndefined(item.data))) {
+        throw Object.assign(new Error('Unsupported field value: undefined'), { code: 'invalid-argument' });
+      }
       const response = await fetch('/__cloud/write', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },

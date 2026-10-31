@@ -89,7 +89,13 @@ export function SyncPanel() {
         <p className={styles.hint}>{t('sync.counts', { pulled: status.pulled, pushed: status.pushed })}</p>
       )}
       {status.conflicts > 0 && <p className={styles.note}>{t('sync.conflicts', { count: status.conflicts })}</p>}
-      {status.failed > 0 && <p className={styles.bad}>{t('sync.failed', { count: status.failed })}</p>}
+      {status.failed > 0 && (
+        <p className={styles.bad}>
+          {status.failedReason === 'too-large'
+            ? t('sync.failedTooLarge', { count: status.failed })
+            : t('sync.failed', { count: status.failed, code: status.failedReason ?? 'unknown' })}
+        </p>
+      )}
 
       <button type="button" className={styles.button} onClick={syncNow} disabled={status.state === 'syncing'}>
         {t('sync.now')}

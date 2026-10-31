@@ -33,33 +33,59 @@ export interface CloudStore {
   write(items: CloudWrite[]): Promise<void>;
 }
 
+/**
+ * Firestore refuses a document with `undefined` anywhere in it. A record made by an older
+ * version of the app may lack a newer field, so every optional field is written as null and
+ * anything still undefined is dropped.
+ */
+export function withoutUndefined(data: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined));
+}
+
+/** The path of the first `undefined` found inside a value, or null. */
+export function findUndefined(value: unknown, path = ''): string | null {
+  if (value === undefined) return path || '(document)';
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i += 1) {
+      const found = findUndefined(value[i], `${path}[${i}]`);
+      if (found) return found;
+    }
+  } else if (typeof value === 'object' && value !== null) {
+    for (const [key, inner] of Object.entries(value)) {
+      const found = findUndefined(inner, path ? `${path}.${key}` : key);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 export function noteToCloud(note: Note): Record<string, unknown> {
-  return {
+  return withoutUndefined({
     kind: note.kind,
     title: note.title,
     body: note.body,
-    items: note.items.map((item) => ({ id: item.id, text: item.text, done: item.done })),
+    items: note.items.map((item) => ({ id: item.id, text: item.text, done: item.done === true })),
     color: note.color,
-    groupId: note.groupId,
-    date: note.date,
-    pinned: note.pinned,
-    archived: note.archived,
+    groupId: note.groupId ?? null,
+    date: note.date ?? null,
+    pinned: note.pinned === true,
+    archived: note.archived === true,
     createdAt: note.createdAt,
     updatedAt: note.updatedAt,
-    deletedAt: note.deletedAt,
-  };
+    deletedAt: note.deletedAt ?? null,
+  });
 }
 
 export function groupToCloud(group: Group): Record<string, unknown> {
-  return {
+  return withoutUndefined({
     name: group.name,
     icon: group.icon,
     color: group.color,
-    noteColor: group.noteColor,
+    noteColor: group.noteColor ?? null,
     createdAt: group.createdAt,
     updatedAt: group.updatedAt,
-    deletedAt: group.deletedAt,
-  };
+    deletedAt: group.deletedAt ?? null,
+  });
 }
 
 /** A deletion marker: tells every device to remove its copy. Content is not kept. */

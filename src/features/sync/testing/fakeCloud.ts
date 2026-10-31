@@ -1,4 +1,4 @@
-import type { CloudDoc, CloudStore, CloudWrite, Collection } from '../cloud';
+import { findUndefined, type CloudDoc, type CloudStore, type CloudWrite, type Collection } from '../cloud';
 
 interface Stored {
   data: Record<string, unknown>;
@@ -95,6 +95,7 @@ export class FakeCloud {
         for (const item of items) {
           const code = this.refuse.get(item.id);
           if (code) throw new CodedError(code);
+          if (findUndefined(item.data)) throw new CodedError('invalid-argument');
         }
         const serverTime = ++this.clock;
         const touched = new Map<Collection, Set<string>>();

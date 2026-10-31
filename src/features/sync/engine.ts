@@ -30,8 +30,10 @@ export interface SyncStatus {
   pushed: number;
   /** Copies made to keep text that would otherwise have been overwritten. */
   conflicts: number;
-  /** Documents the cloud refused one by one (e.g. a single huge note). */
+  /** Documents that could not be sent one by one (a note that is too big, or one the cloud refuses). */
   failed: number;
+  /** Why: "too-large", or the error code the cloud answered with. */
+  failedReason: string | null;
 }
 
 export interface EngineOptions {
@@ -55,6 +57,10 @@ interface PushItem extends CloudWrite {
 const BATCH = 400;
 
 /** Problems with one document that should not block the others. */
+/** Firestore's limit is 1 MiB per document; stay clearly below it. */
+const MAX_DOC_BYTES = 900_000;
+const sizeOf = (data: unknown) => new TextEncoder().encode(JSON.stringify(data)).length;
+
 const perDocument = (code: string) => code === 'invalid-argument' || code === 'out-of-range';
 
 export class SyncEngine {
@@ -73,6 +79,7 @@ export class SyncEngine {
     pushed: 0,
     conflicts: 0,
     failed: 0,
+    failedReason: null,
   };
   private started = false;
   private unsubscribers: Array<() => void> = [];
@@ -142,7 +149,14 @@ export class SyncEngine {
     clearTimeout(this.retryTimer);
     clearTimeout(this.pushTimer);
     this.pushTimer = undefined;
-    this.set({ state: this.ready.notes && this.ready.groups ? 'syncing' : 'starting', error: null });
+    // Asking again also gives the documents that failed before another chance.
+    this.failedIds.clear();
+    this.set({
+      state: this.ready.notes && this.ready.groups ? 'syncing' : 'starting',
+      error: null,
+      failed: 0,
+      failedReason: null,
+    });
     this.enqueue(async () => {
       if (this.needsResubscribe) await this.subscribe();
       await this.push();
@@ -425,8 +439,19 @@ export class SyncEngine {
     this.set({ state: 'syncing' });
 
     let pushed = 0;
-    for (let i = 0; i < items.length; i += BATCH) {
-      const chunk = items.slice(i, i + BATCH);
+    // A document over the limit can never be accepted: say so at once instead of asking the cloud.
+    const sendable: PushItem[] = [];
+    for (const item of items) {
+      if (sizeOf(item.data) > MAX_DOC_BYTES) {
+        this.failedIds.add(item.id);
+        this.set({ failed: this.status.failed + 1, failedReason: 'too-large' });
+      } else {
+        sendable.push(item);
+      }
+    }
+
+    for (let i = 0; i < sendable.length; i += BATCH) {
+      const chunk = sendable.slice(i, i + BATCH);
       try {
         await this.store.write(chunk.map(({ collection, id, data }) => ({ collection, id, data })));
         await this.markPushed(chunk);
@@ -443,7 +468,7 @@ export class SyncEngine {
           } catch (single) {
             if (!perDocument(errorCode(single))) throw single;
             this.failedIds.add(item.id);
-            this.set({ failed: this.status.failed + 1 });
+            this.set({ failed: this.status.failed + 1, failedReason: errorCode(single) });
           }
         }
       }

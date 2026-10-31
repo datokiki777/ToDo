@@ -160,6 +160,68 @@ describe('keeping devices in step', () => {
     expect((await a.groups.getAll())[0]?.noteColor).toBeNull();
   });
 
+  it('notes and groups made by older versions of the app (without the newer fields) still upload', async () => {
+    const a = device('a');
+    const b = device('b');
+    // Exactly what an old version left in the database: no `date` on notes, no `noteColor` on groups.
+    const { date: _d, ...oldNote } = {
+      ...(await a.notes.create({ kind: 'text' })),
+      title: 'ძველი ნოტა',
+      body: 'ტექსტი',
+    };
+    await a.db.notes.put(oldNote as never);
+    const { noteColor: _c, ...oldGroup } = await a.groups.create({ name: 'ძველი ჯგუფი' });
+    await a.db.groups.put(oldGroup as never);
+    expect('date' in (await a.db.notes.get(oldNote.id))!).toBe(false);
+
+    await a.engine.start();
+    await b.engine.start();
+    await settle(a, b);
+
+    expect(a.engine.getStatus().failed).toBe(0);
+    expect(a.engine.getStatus().pending).toBe(0);
+    expect(await b.notes.get(oldNote.id)).toMatchObject({ title: 'ძველი ნოტა', date: null });
+    expect((await b.groups.getAll())[0]).toMatchObject({ name: 'ძველი ჯგუფი', noteColor: null });
+  });
+
+  it('a note that really is too big is reported as such, without asking the cloud, and the rest still upload', async () => {
+    const a = device('a');
+    const huge = await write(a, { title: 'დიდი', body: 'ა'.repeat(400_000) }); // Georgian letters are 3 bytes each
+    const fine = await write(a, { title: 'პატარა', body: 'ok' });
+    await a.engine.start();
+    await settle(a);
+
+    const status = a.engine.getStatus();
+    expect(status).toMatchObject({ failed: 1, failedReason: 'too-large' });
+    expect(cloud.get(UID, 'notes', huge)).toBeUndefined();
+    expect(cloud.get(UID, 'notes', fine)).toBeDefined();
+    expect((await a.notes.get(huge))?.body).toHaveLength(400_000); // nothing lost on the device
+  });
+
+  it('when the cloud refuses a note, the real error code is kept for the message', async () => {
+    const a = device('a');
+    const id = await write(a, { title: 'x', body: 'y' });
+    cloud.refuse.set(id, 'invalid-argument');
+    await a.engine.start();
+    await settle(a);
+    expect(a.engine.getStatus()).toMatchObject({ failed: 1, failedReason: 'invalid-argument' });
+  });
+
+  it('"sync now" tries the failed notes again, and clears the warning when they get through', async () => {
+    const a = device('a');
+    const id = await write(a, { title: 'x', body: 'y' });
+    cloud.refuse.set(id, 'invalid-argument');
+    await a.engine.start();
+    await settle(a);
+    expect(a.engine.getStatus().failed).toBe(1);
+
+    cloud.refuse.delete(id);
+    a.engine.syncNow();
+    await settle(a);
+    expect(a.engine.getStatus()).toMatchObject({ failed: 0, failedReason: null, pending: 0 });
+    expect(cloud.get(UID, 'notes', id)).toBeDefined();
+  });
+
   it('trash and restore travel too', async () => {
     const a = device('a');
     const b = device('b');

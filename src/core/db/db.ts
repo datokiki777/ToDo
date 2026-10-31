@@ -69,6 +69,31 @@ export class TodoDB extends Dexie {
       tombstones: 'key',
       pendingSnapshots: 'id',
     });
+    // v5: notes made before calendars have no `date`, groups made before note colours have no
+    // `noteColor`. Fill them in (null = none) so every record has every field. Nothing else changes,
+    // and updatedAt stays as it was, so nothing looks edited.
+    this.version(5)
+      .stores({
+        notes: 'id, updatedAt, deletedAt, color, groupId',
+        groups: 'id, updatedAt, deletedAt',
+        sync: 'key',
+        tombstones: 'key',
+        pendingSnapshots: 'id',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('notes')
+          .toCollection()
+          .modify((note: { date?: string | null }) => {
+            if (note.date === undefined) note.date = null;
+          });
+        await tx
+          .table('groups')
+          .toCollection()
+          .modify((group: { noteColor?: string | null }) => {
+            if (group.noteColor === undefined) group.noteColor = null;
+          });
+      });
   }
 }
 
