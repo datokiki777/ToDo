@@ -100,6 +100,17 @@ describe('decideNote: deleted for good in the cloud', () => {
   });
 });
 
+describe('textDiffers (continued)', () => {
+  it('does not treat the kind hint on its own as a change of text', () => {
+    expect(textDiffers(note({ kind: 'text', body: 'b' }), note({ kind: 'checklist', body: 'b' }))).toBe(false);
+  });
+  it('sees a change in the checklist even when there is text too', () => {
+    const a = note({ body: 'b', items: [{ id: '1', text: 'x', done: false }] });
+    const b = note({ body: 'b', items: [{ id: '1', text: 'x', done: true }] });
+    expect(textDiffers(a, b)).toBe(true);
+  });
+});
+
 describe('textDiffers', () => {
   it('ignores surrounding whitespace and compares checklist rows', () => {
     expect(textDiffers(note({ body: ' b ' }), note({ body: 'b' }))).toBe(false);

@@ -30,16 +30,37 @@ import { LinkList } from '../components/LinkList';
 import { textLinks } from '../links';
 import { ColorPicker } from '../components/ColorPicker';
 import { useNote } from '../hooks';
-import { convertKind, isNoteEmpty, type Note, type NoteColor, type NoteContent } from '../model';
+import {
+  checklistToText,
+  hasChecklist,
+  isNoteEmpty,
+  textToChecklist,
+  type Note,
+  type NoteColor,
+  type NoteContent,
+} from '../model';
 import { notesRepository } from '../repository';
 import { noteToShare, sharePayload } from '../share';
 import { trashDaysLeft } from '../trash';
 import { useAutosave } from '../useAutosave';
 import styles from './NoteEditorPage.module.css';
 
-/** A checklist always shows one empty row to type into. */
-function withBlankRow(content: NoteContent): NoteContent {
-  if (content.kind === 'checklist' && content.items.length === 0) {
+/** Which parts of a note are shown: the text, the checklist, or both. */
+interface Sections {
+  text: boolean;
+  list: boolean;
+}
+
+/** What a note shows: whatever it holds; a blank note shows what it was started as. */
+function sectionsFor(content: NoteContent): Sections {
+  const list = hasChecklist(content) || content.kind === 'checklist';
+  const text = content.body.trim() !== '' || !list;
+  return { text, list };
+}
+
+/** A visible checklist always has one empty row to type into. */
+function withBlankRow(content: NoteContent, listVisible: boolean): NoteContent {
+  if (listVisible && content.items.length === 0) {
     return { ...content, items: [{ id: newId(), text: '', done: false }] };
   }
   return content;
@@ -63,9 +84,16 @@ function Editor({ note }: { note: Note }) {
   const trashed = note.deletedAt !== null;
   // Taken from the saved note, so the list settles shortly after typing stops instead of jumping.
   const links = useMemo(() => textLinks(note), [note.title, note.body]); // eslint-disable-line react-hooks/exhaustive-deps
-  const [draft, setDraft] = useState<NoteContent>(() =>
-    withBlankRow({ kind: note.kind, title: note.title, body: note.body, items: note.items }),
+  const [sections, setSections] = useState<Sections>(() =>
+    sectionsFor({ kind: note.kind, title: note.title, body: note.body, items: note.items }),
   );
+  const sectionsRef = useRef(sections);
+  sectionsRef.current = sections;
+  const [focusTarget, setFocusTarget] = useState<'body' | 'list' | null>(null);
+  const [draft, setDraft] = useState<NoteContent>(() => {
+    const start: NoteContent = { kind: note.kind, title: note.title, body: note.body, items: note.items };
+    return withBlankRow(start, sectionsFor(start).list);
+  });
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [sheet, setSheet] = useState<'pick' | 'create' | null>(null);
   const groups = useGroups();
@@ -98,7 +126,10 @@ function Editor({ note }: { note: Note }) {
     if (autosave.snapshotOf(incoming) === autosave.savedSnapshot()) return; // our own save, or no change
     if (autosave.hasUnsaved()) return; // the person is typing: keep their text
     autosave.rebase(incoming);
-    setDraft(withBlankRow(incoming));
+    const next = sectionsFor(incoming);
+    const list = sectionsRef.current.list || next.list;
+    setSections({ text: sectionsRef.current.text || next.text, list });
+    setDraft(withBlankRow(incoming, list));
   }, [note.kind, note.title, note.body, note.items]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const goBack = () => {
@@ -109,8 +140,39 @@ function Editor({ note }: { note: Note }) {
   const focusFirstField = () =>
     contentRef.current?.querySelector<HTMLElement>('[data-field]')?.focus();
 
-  const toggleKind = () =>
-    setDraft((d) => withBlankRow(convertKind(d, d.kind === 'text' ? 'checklist' : 'text')));
+  // Put the cursor where something was just added.
+  useEffect(() => {
+    if (focusTarget === null) return;
+    const root = contentRef.current;
+    const target =
+      focusTarget === 'body'
+        ? root?.querySelector<HTMLElement>('[data-body]')
+        : Array.from(root?.querySelectorAll<HTMLElement>('[data-list] [data-field]') ?? []).at(-1);
+    target?.focus();
+    setFocusTarget(null);
+  }, [focusTarget, sections]);
+
+  const addChecklist = () => {
+    setSections((s) => ({ ...s, list: true }));
+    setDraft((d) => withBlankRow(d, true));
+    setFocusTarget('list');
+  };
+
+  const addText = () => {
+    setSections((s) => ({ ...s, text: true }));
+    setFocusTarget('body');
+  };
+
+  /** Only when the note holds just one of the two: its words move into the other form. */
+  const convert = () => {
+    if (sections.text) {
+      setDraft((d) => withBlankRow(textToChecklist(d), true));
+      setSections({ text: false, list: true });
+    } else {
+      setDraft((d) => checklistToText(d));
+      setSections({ text: true, list: false });
+    }
+  };
 
   const setColor = (color: NoteColor) => void notesRepository.update(note.id, { color });
 
@@ -187,12 +249,11 @@ function Editor({ note }: { note: Note }) {
             >
               <Pin size={22} fill={note.pinned ? 'currentColor' : 'none'} />
             </IconButton>
-            <IconButton
-              label={draft.kind === 'text' ? t('editor.toChecklist') : t('editor.toText')}
-              onClick={toggleKind}
-            >
-              {draft.kind === 'text' ? <ListChecks size={22} /> : <Type size={22} />}
-            </IconButton>
+            {sections.text !== sections.list && (
+              <IconButton label={sections.text ? t('editor.toChecklist') : t('editor.toText')} onClick={convert}>
+                {sections.text ? <ListChecks size={22} /> : <Type size={22} />}
+              </IconButton>
+            )}
             <IconButton
               label={note.archived ? t('editor.unarchive') : t('editor.archive')}
               onClick={() => void toggleArchive()}
@@ -257,22 +318,50 @@ function Editor({ note }: { note: Note }) {
           }}
         />
         <LinkList links={links} />
-        {draft.kind === 'text' ? (
+        {sections.text && (
           <AutoTextarea
             data-field
+            data-body
             className={styles.body}
             value={draft.body}
             placeholder={t('editor.body')}
             readOnly={trashed}
             onValueChange={(body) => setDraft((d) => ({ ...d, body }))}
           />
-        ) : (
-          <ChecklistEditor
-            items={draft.items}
-            readOnly={trashed}
-            onChange={(items) => setDraft((d) => ({ ...d, items }))}
-          />
         )}
+        {sections.list && (
+          <div data-list className={sections.text ? styles.listAfterText : undefined}>
+            <ChecklistEditor
+              items={draft.items}
+              readOnly={trashed}
+              onChange={(items) => setDraft((d) => ({ ...d, items }))}
+            />
+          </div>
+        )}
+
+        {!trashed && (!sections.text || !sections.list) && (
+          <div className={styles.adders}>
+            {!sections.list && (
+              <button type="button" className={styles.adder} onClick={addChecklist}>
+                <ListChecks size={18} aria-hidden="true" />
+                {t('editor.addChecklist')}
+              </button>
+            )}
+            {!sections.text && (
+              <button type="button" className={styles.adder} onClick={addText}>
+                <Type size={18} aria-hidden="true" />
+                {t('editor.addText')}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* the empty space below keeps working like part of the text: tap it to carry on typing */}
+        <div
+          className={styles.tapzone}
+          aria-hidden="true"
+          onClick={() => !trashed && sections.text && setFocusTarget('body')}
+        />
       </div>
 
       <footer className={styles.footer}>

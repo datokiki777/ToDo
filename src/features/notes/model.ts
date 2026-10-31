@@ -26,7 +26,8 @@ export interface ChecklistItem {
  * - `id` is a UUID,
  * - `updatedAt` decides which copy wins when two copies are merged,
  * - `deletedAt` marks trash (and later acts as a tombstone) instead of removing the record.
- * Invariant: text notes keep `items` empty, checklists keep `body` empty.
+ * A note can hold text, a checklist, or both. `kind` is only a hint of what it was started as:
+ * what is shown depends on what is inside.
  */
 export interface Note {
   id: string;
@@ -73,13 +74,37 @@ export function itemsToText(items: ChecklistItem[]): string {
     .join('\n');
 }
 
+/** Does the note have any checklist rows with words in them? */
+export function hasChecklist(note: Pick<Note, 'items'>): boolean {
+  return note.items.some((item) => item.text.trim() !== '');
+}
+
+/**
+ * The hint stored in `kind`: "checklist" only for a note that is nothing but a checklist; a note
+ * with text (alone or together with a checklist) is "text"; a blank note keeps what it started as.
+ */
+export function deriveKind(content: NoteContent): NoteKind {
+  const text = content.body.trim() !== '';
+  const list = hasChecklist(content);
+  if (list && !text) return 'checklist';
+  if (text) return 'text';
+  return content.kind;
+}
+
+/** Turn the text's lines into checklist rows (added after any rows already there). */
+export function textToChecklist(content: NoteContent): NoteContent {
+  return { ...content, kind: 'checklist', body: '', items: [...content.items, ...textToItems(content.body)] };
+}
+
+/** Turn the checklist rows into lines of text (added after any text already there). */
+export function checklistToText(content: NoteContent): NoteContent {
+  const body = [content.body.trim(), itemsToText(content.items)].filter((part) => part !== '').join('\n');
+  return { ...content, kind: 'text', body, items: [] };
+}
+
 /** Switch a note between text and checklist, keeping its words. */
 export function convertKind(content: NoteContent, kind: NoteKind): NoteContent {
-  if (content.kind === kind) return content;
-  if (kind === 'checklist') {
-    return { ...content, kind, body: '', items: textToItems(content.body) };
-  }
-  return { ...content, kind, body: itemsToText(content.items), items: [] };
+  return kind === 'checklist' ? textToChecklist(content) : checklistToText(content);
 }
 
 function firstLine(text: string): string {
@@ -103,14 +128,13 @@ export function displayTitle(note: Pick<Note, 'title' | 'body' | 'items'>): stri
 /** Preview lines under the title (never repeats the line used as the title). */
 export function previewLines(note: Note, maxLines: number): string[] {
   const hasTitle = note.title.trim() !== '';
-  if (note.kind === 'checklist') {
-    const texts = note.items.map((item) => item.text.trim()).filter((text) => text !== '');
-    return (hasTitle ? texts : texts.slice(1)).slice(0, maxLines);
-  }
-  const lines = note.body
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line !== '');
+  const lines = [
+    ...note.body
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line !== ''),
+    ...note.items.map((item) => item.text.trim()).filter((text) => text !== ''),
+  ];
   return (hasTitle ? lines : lines.slice(1)).slice(0, maxLines);
 }
 
@@ -142,7 +166,7 @@ export function parseNote(raw: unknown): Note | null {
 
   const kind: NoteKind = r.kind === 'checklist' ? 'checklist' : 'text';
   const items: ChecklistItem[] = [];
-  if (kind === 'checklist' && Array.isArray(r.items)) {
+  if (Array.isArray(r.items)) {
     for (const entry of r.items) {
       if (typeof entry !== 'object' || entry === null) continue;
       const e = entry as Record<string, unknown>;
@@ -159,7 +183,7 @@ export function parseNote(raw: unknown): Note | null {
     id: r.id,
     kind,
     title: typeof r.title === 'string' ? r.title : '',
-    body: kind === 'text' && typeof r.body === 'string' ? r.body : '',
+    body: typeof r.body === 'string' ? r.body : '',
     items,
     color: isNoteColor(r.color) ? r.color : DEFAULT_COLOR,
     groupId: typeof r.groupId === 'string' && r.groupId !== '' ? r.groupId : null,
@@ -173,5 +197,6 @@ export function parseNote(raw: unknown): Note | null {
 
 /** What gets written to the database: blank checklist rows are editing scaffolding, not content. */
 export function contentForSave(content: NoteContent): NoteContent {
-  return { ...content, items: content.items.filter((item) => item.text.trim() !== '') };
+  const items = content.items.filter((item) => item.text.trim() !== '');
+  return { ...content, kind: deriveKind({ ...content, items }), items };
 }

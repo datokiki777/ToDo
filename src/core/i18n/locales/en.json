@@ -86,7 +86,9 @@
     "archived": "Archived",
     "unarchived": "Moved out of archive",
     "restored": "Restored",
-    "share": "Share"
+    "share": "Share",
+    "addChecklist": "Add a checklist",
+    "addText": "Add text"
   },
   "settings": {
     "title": "Settings",

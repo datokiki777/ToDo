@@ -44,6 +44,19 @@ describe('noteToShare', () => {
     expect(payload?.text).toBe('საყიდლები\n\n☑ პური\n☐ რძე');
   });
 
+  it('sends the text and the checklist together, each as its own block', () => {
+    const payload = noteToShare({
+      kind: 'text',
+      title: 'სია',
+      body: 'შენიშვნა',
+      items: [
+        { id: '1', text: 'პური', done: true },
+        { id: '2', text: 'რძე', done: false },
+      ],
+    });
+    expect(payload?.text).toBe('სია\n\nშენიშვნა\n\n☑ პური\n☐ რძე');
+  });
+
   it('has nothing to send for a blank note', () => {
     expect(noteToShare(text({}))).toBeNull();
     expect(noteToShare({ kind: 'checklist', title: ' ', body: '', items: [{ id: '1', text: '', done: false }] })).toBeNull();

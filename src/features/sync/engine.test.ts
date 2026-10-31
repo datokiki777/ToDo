@@ -123,6 +123,29 @@ describe('keeping devices in step', () => {
     expect(await b.notes.get(id)).toMatchObject({ title: 'ახალი', body: 'შეცვლილი' });
   });
 
+  it('a note with both text and a checklist reaches the other device whole', async () => {
+    const a = device('a');
+    const b = device('b');
+    const id = await write(a, { title: 'შერეული', body: 'ტექსტი ზემოთ' });
+    await a.notes.update(id, { items: [{ id: 'r1', text: 'პური', done: true }, { id: 'r2', text: 'რძე', done: false }] });
+    await a.engine.start();
+    await b.engine.start();
+    await settle(a, b);
+
+    expect(await b.notes.get(id)).toMatchObject({
+      body: 'ტექსტი ზემოთ',
+      items: [
+        { id: 'r1', text: 'პური', done: true },
+        { id: 'r2', text: 'რძე', done: false },
+      ],
+    });
+
+    await b.notes.update(id, { body: 'შეცვლილი ტექსტი' });
+    await settle(a, b);
+    expect((await a.notes.get(id))?.items).toHaveLength(2);
+    expect((await a.notes.get(id))?.body).toBe('შეცვლილი ტექსტი');
+  });
+
   it('trash and restore travel too', async () => {
     const a = device('a');
     const b = device('b');

@@ -1,14 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
   checklistProgress,
+  contentForSave,
   convertKind,
+  deriveKind,
   displayTitle,
+  hasChecklist,
   isNoteEmpty,
   matchesQuery,
   parseNote,
   previewLines,
   type Note,
+  type NoteContent,
 } from './model';
+import { noteToCloud } from '@/features/sync/cloud';
 import { countNotes, selectNotes } from './selectors';
 
 function note(partial: Partial<Note> = {}): Note {
@@ -108,11 +113,17 @@ describe('model', () => {
         id: 'a',
         kind: 'checklist',
         updatedAt: 1,
-        body: 'ignored',
         items: [{ id: 'i1', text: 'ok', done: true }, { text: 5 }, null],
       });
-      expect(parsed?.body).toBe('');
       expect(parsed?.items).toEqual([{ id: 'i1', text: 'ok', done: true }]);
+    });
+
+    it('keeps both the text and the checklist, whatever the kind says', () => {
+      const items = [{ id: 'i1', text: 'რძე', done: false }];
+      for (const kind of ['text', 'checklist']) {
+        const parsed = parseNote({ id: 'a', kind, updatedAt: 1, body: 'ტექსტი', items });
+        expect(parsed).toMatchObject({ body: 'ტექსტი', items });
+      }
     });
   });
 });
@@ -212,5 +223,59 @@ describe('groups in lists', () => {
     expect(parseNote({ id: 'x', updatedAt: 1, groupId: 'G' })?.groupId).toBe('G');
     expect(parseNote({ id: 'x', updatedAt: 1 })?.groupId).toBeNull();
     expect(parseNote({ id: 'x', updatedAt: 1, groupId: 5 })?.groupId).toBeNull();
+  });
+});
+
+describe('a note with both text and a checklist', () => {
+  const row = (text: string, done = false) => ({ id: text, text, done });
+  const mixed = (p: Partial<Note> = {}) =>
+    note({ title: 'სია', body: 'ტექსტი\nმეორე ხაზი', items: [row('პური', true), row('რძე')], ...p });
+
+  it('shows the text first and then the checklist in previews', () => {
+    expect(previewLines(mixed(), 5)).toEqual(['ტექსტი', 'მეორე ხაზი', 'პური', 'რძე']);
+    expect(previewLines(mixed({ title: '' }), 5)).toEqual(['მეორე ხაზი', 'პური', 'რძე']);
+  });
+
+  it('counts the checklist progress even when there is text too', () => {
+    expect(hasChecklist(mixed())).toBe(true);
+    expect(checklistProgress(mixed())).toEqual({ done: 1, total: 2 });
+    expect(hasChecklist(note({ body: 'x' }))).toBe(false);
+  });
+
+  it('is found by searching either part', () => {
+    expect(matchesQuery(mixed(), 'მეორე ხაზი')).toBe(true);
+    expect(matchesQuery(mixed(), 'რძე')).toBe(true);
+  });
+
+  it('derives the hint from what is inside, keeping the choice for a blank note', () => {
+    const c = (p: Partial<NoteContent>): NoteContent => ({ kind: 'text', title: '', body: '', items: [], ...p });
+    expect(deriveKind(c({ items: [row('a')] }))).toBe('checklist');
+    expect(deriveKind(c({ body: 'x', items: [row('a')] }))).toBe('text');
+    expect(deriveKind(c({ kind: 'checklist', body: 'x' }))).toBe('text');
+    expect(deriveKind(c({ kind: 'checklist' }))).toBe('checklist'); // a new, still blank checklist
+    expect(deriveKind(c({ kind: 'text' }))).toBe('text');
+    expect(deriveKind(c({ kind: 'checklist', items: [row('  ')] }))).toBe('checklist');
+  });
+
+  it('turning text into a checklist adds to the rows already there, and back', () => {
+    const start: NoteContent = { kind: 'text', title: 't', body: 'ერთი\nორი', items: [row('უკვე იყო')] };
+    const list = convertKind(start, 'checklist');
+    expect(list.items.map((i) => i.text)).toEqual(['უკვე იყო', 'ერთი', 'ორი']);
+    expect(list.body).toBe('');
+    const text = convertKind({ ...start, body: 'ტექსტი' }, 'text');
+    expect(text.body).toBe('ტექსტი\nუკვე იყო');
+    expect(text.items).toEqual([]);
+  });
+
+  it('saving keeps both parts and writes the right hint', () => {
+    const saved = contentForSave({ kind: 'checklist', title: '', body: 'ტექსტი', items: [row('a'), row('  ')] });
+    expect(saved.kind).toBe('text');
+    expect(saved.items.map((i) => i.text)).toEqual(['a']);
+    expect(saved.body).toBe('ტექსტი');
+  });
+
+  it('survives the trip to the cloud and back', () => {
+    const original = mixed({ updatedAt: 9, kind: 'text' });
+    expect(parseNote({ ...noteToCloud(original), id: original.id })).toEqual(original);
   });
 });

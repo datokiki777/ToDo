@@ -6,7 +6,7 @@ import type { ViewMode } from '@/core/settings/store';
 import { GroupIcon } from '@/features/groups/icons';
 import type { Group } from '@/features/groups/model';
 import { asOnlyLink, noteLinks } from '../links';
-import { checklistProgress, displayTitle, previewLines, type Note } from '../model';
+import { checklistProgress, displayTitle, hasChecklist, previewLines, type Note } from '../model';
 import { LinkIcon } from './LinkIcon';
 import styles from './NoteCard.module.css';
 
@@ -23,7 +23,7 @@ export function NoteCard({ note, view, group, daysLeft }: Props) {
   const { t, i18n } = useTranslation();
   const rawTitle = displayTitle(note);
   const preview = previewLines(note, 4).map((line) => asOnlyLink(line)?.short ?? line);
-  const progress = note.kind === 'checklist' ? checklistProgress(note) : null;
+  const progress = hasChecklist(note) ? checklistProgress(note) : null;
   const links = noteLinks(note);
   const single = links.length === 1 ? links[0]! : null;
 

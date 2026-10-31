@@ -39,3 +39,37 @@
     background: var(--bg);
   }
 }
+
+/* Backup: two tiles side by side, each in its own gentle colour. */
+.tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 84px;
+  padding: 12px 10px;
+  border-radius: 14px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-align: center;
+}
+.tileSave {
+  background: var(--teal-bg);
+  color: var(--teal-accent);
+}
+.tileLoad {
+  background: var(--blue-bg);
+  color: var(--blue-accent);
+}
+.tile span {
+  color: var(--ink);
+}
+.tile:active {
+  filter: brightness(0.94);
+}

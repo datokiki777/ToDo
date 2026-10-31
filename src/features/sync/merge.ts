@@ -17,9 +17,8 @@ export interface NoteDecision {
   copy?: 'local' | 'remote';
 }
 
-function textOf(note: Pick<Note, 'title' | 'body' | 'items' | 'kind'>): string {
+function textOf(note: Pick<Note, 'title' | 'body' | 'items'>): string {
   return JSON.stringify([
-    note.kind,
     note.title.trim(),
     note.body.trim(),
     note.items.map((item) => [item.text.trim(), item.done]),

@@ -8,29 +8,23 @@ export interface SharePayload {
 }
 
 /**
- * Turns a note into plain text for sending to other apps: the title, then the text,
- * or for a checklist one line per row with ☐ / ☑. Returns null when there is nothing to send.
+ * Turns a note into plain text for sending to other apps: the title, the text, and the
+ * checklist (one line per row with ☐ / ☑), each as its own block. Returns null when there is nothing to send.
  */
 export function noteToShare(content: NoteContent): SharePayload | null {
   const title = content.title.trim();
-  const lines: string[] = [];
-  if (title !== '') lines.push(title);
+  const blocks: string[] = [];
+  if (title !== '') blocks.push(title);
 
-  if (content.kind === 'checklist') {
-    const rows = content.items
-      .filter((item) => item.text.trim() !== '')
-      .map((item) => `${item.done ? '☑' : '☐'} ${item.text.trim()}`);
-    if (title !== '' && rows.length > 0) lines.push('');
-    lines.push(...rows);
-  } else {
-    const body = content.body.trim();
-    if (body !== '') {
-      if (title !== '') lines.push('');
-      lines.push(body);
-    }
-  }
+  const body = content.body.trim();
+  if (body !== '') blocks.push(body);
 
-  const text = lines.join('\n');
+  const rows = content.items
+    .filter((item) => item.text.trim() !== '')
+    .map((item) => `${item.done ? '☑' : '☐'} ${item.text.trim()}`);
+  if (rows.length > 0) blocks.push(rows.join('\n'));
+
+  const text = blocks.join('\n\n');
   if (text === '') return null;
   return { title: displayTitle(content), text };
 }

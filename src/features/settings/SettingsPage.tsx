@@ -98,14 +98,14 @@ export function SettingsPage() {
         <section className={styles.section}>
           <h2 className={styles.heading}>{t('settings.backup')}</h2>
           <p className={styles.hint}>{t('settings.backupHint')}</p>
-          <div className={styles.buttons}>
-            <button type="button" className={styles.button} onClick={() => void exportBackup()}>
-              <Download size={20} />
-              {t('settings.export')}
+          <div className={styles.tiles}>
+            <button type="button" className={`${styles.tile} ${styles.tileSave}`} onClick={() => void exportBackup()}>
+              <Download size={24} aria-hidden="true" />
+              <span>{t('settings.export')}</span>
             </button>
-            <button type="button" className={styles.button} onClick={() => fileInput.current?.click()}>
-              <Upload size={20} />
-              {t('settings.import')}
+            <button type="button" className={`${styles.tile} ${styles.tileLoad}`} onClick={() => fileInput.current?.click()}>
+              <Upload size={24} aria-hidden="true" />
+              <span>{t('settings.import')}</span>
             </button>
             <input
               ref={fileInput}
