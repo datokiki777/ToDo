@@ -1,3 +1,4 @@
+import { isDateKey } from '@/core/dates';
 import { newId } from '@/core/id';
 
 export const NOTE_COLORS = [
@@ -38,6 +39,8 @@ export interface Note {
   color: NoteColor;
   /** Which group the note belongs to; null = no group. */
   groupId: string | null;
+  /** The calendar day the note is marked for, "2026-10-30", or null. */
+  date: string | null;
   pinned: boolean;
   archived: boolean;
   createdAt: number;
@@ -187,6 +190,7 @@ export function parseNote(raw: unknown): Note | null {
     items,
     color: isNoteColor(r.color) ? r.color : DEFAULT_COLOR,
     groupId: typeof r.groupId === 'string' && r.groupId !== '' ? r.groupId : null,
+    date: isDateKey(r.date) ? r.date : null,
     pinned: r.pinned === true,
     archived: r.archived === true,
     createdAt: finiteNumber(r.createdAt) ?? updatedAt,

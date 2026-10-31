@@ -1,6 +1,6 @@
 import { isNoteEmpty, matchesQuery, NOTE_COLORS, type Note, type NoteColor } from './model';
 
-export type NotesView = 'active' | 'archive' | 'trash';
+export type NotesView = 'active' | 'trash';
 export type SortBy = 'date' | 'color';
 
 export interface NotesQuery {
@@ -12,11 +12,14 @@ export interface NotesQuery {
   sortBy: SortBy;
 }
 
+/**
+ * Which notes a list shows. There is no archive any more: a note that was archived earlier is
+ * simply an ordinary note (the old flag in the data is ignored, so nothing disappears).
+ */
 export function inView(note: Note, view: NotesView): boolean {
   if (view === 'trash') return note.deletedAt !== null;
   // Blank notes are never worth listing (a note being created, before its first word).
-  if (note.deletedAt !== null || isNoteEmpty(note)) return false;
-  return view === 'archive' ? note.archived : !note.archived;
+  return note.deletedAt === null && !isNoteEmpty(note);
 }
 
 /** Pure list logic: filter by view, colour and search text, then sort. */

@@ -37,13 +37,7 @@ export class SnapshotError extends Error {
   }
 }
 
-const pad = (n: number) => String(n).padStart(2, '0');
-
-/** The person's local calendar day for a moment in time. */
-export function dateKey(ms: number): string {
-  const d = new Date(ms);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
+export { dateKey } from '@/core/dates';
 
 /**
  * Which copies to delete: all but the newest SNAPSHOT_KEEP daily ones, and all but the newest few

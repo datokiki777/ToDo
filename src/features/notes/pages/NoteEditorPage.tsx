@@ -1,7 +1,6 @@
 import {
-  Archive,
-  ArchiveRestore,
   ArrowLeft,
+  CalendarDays,
   ChevronDown,
   FolderOpen,
   ListChecks,
@@ -15,10 +14,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { newId } from '@/core/id';
-import { formatLongDate } from '@/core/time';
+import { formatDay, formatLongDate } from '@/core/time';
 import { ConfirmDialog } from '@/core/ui/ConfirmDialog';
 import { IconButton } from '@/core/ui/IconButton';
 import { useToasts } from '@/core/ui/toasts';
+import { DateSheet } from '@/features/calendar/components/DateSheet';
 import { GroupPickerSheet } from '@/features/groups/components/GroupPickerSheet';
 import { GroupSheet, type GroupValues } from '@/features/groups/components/GroupSheet';
 import { useGroups } from '@/features/groups/hooks';
@@ -95,7 +95,7 @@ function Editor({ note }: { note: Note }) {
     return withBlankRow(start, sectionsFor(start).list);
   });
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [sheet, setSheet] = useState<'pick' | 'create' | null>(null);
+  const [sheet, setSheet] = useState<'pick' | 'create' | 'date' | null>(null);
   const groups = useGroups();
   const group = groups?.find((g) => g.id === note.groupId) ?? null;
   const startedEmpty = useMemo(() => isNoteEmpty(note), [note.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -174,6 +174,8 @@ function Editor({ note }: { note: Note }) {
     }
   };
 
+  const setDate = (date: string | null) => void notesRepository.update(note.id, { date });
+
   const setColor = (color: NoteColor) => void notesRepository.update(note.id, { color });
 
   const setGroup = (groupId: string | null) => {
@@ -196,17 +198,6 @@ function Editor({ note }: { note: Note }) {
   };
 
   const togglePin = () => void notesRepository.update(note.id, { pinned: !note.pinned });
-
-  const toggleArchive = async () => {
-    await flush();
-    const archive = !note.archived;
-    await notesRepository.setArchived(note.id, archive);
-    showToast(archive ? t('editor.archived') : t('editor.unarchived'), {
-      actionLabel: t('common.undo'),
-      onAction: () => void notesRepository.setArchived(note.id, !archive),
-    });
-    goBack();
-  };
 
   const trash = async () => {
     await flush();
@@ -244,7 +235,6 @@ function Editor({ note }: { note: Note }) {
             <IconButton
               label={note.pinned ? t('editor.unpin') : t('editor.pin')}
               pressed={note.pinned}
-              disabled={note.archived}
               onClick={togglePin}
             >
               <Pin size={22} fill={note.pinned ? 'currentColor' : 'none'} />
@@ -254,12 +244,6 @@ function Editor({ note }: { note: Note }) {
                 {sections.text ? <ListChecks size={22} /> : <Type size={22} />}
               </IconButton>
             )}
-            <IconButton
-              label={note.archived ? t('editor.unarchive') : t('editor.archive')}
-              onClick={() => void toggleArchive()}
-            >
-              {note.archived ? <ArchiveRestore size={22} /> : <Archive size={22} />}
-            </IconButton>
             <IconButton label={t('editor.moveToTrash')} onClick={() => void trash()}>
               <Trash2 size={22} />
             </IconButton>
@@ -291,17 +275,32 @@ function Editor({ note }: { note: Note }) {
       )}
 
       <div className={styles.content} ref={contentRef}>
-        <button
-          type="button"
-          className={styles.groupChip}
-          disabled={trashed}
-          aria-label={t('groups.choose')}
-          onClick={() => setSheet('pick')}
-        >
-          {group ? <GroupIcon name={group.icon} size={16} /> : <FolderOpen size={16} aria-hidden="true" />}
-          <span className={styles.groupName}>{group ? group.name : t('groups.noGroup')}</span>
-          {!trashed && <ChevronDown size={16} aria-hidden="true" />}
-        </button>
+        <div className={styles.chips}>
+          <button
+            type="button"
+            className={styles.groupChip}
+            disabled={trashed}
+            aria-label={t('groups.choose')}
+            onClick={() => setSheet('pick')}
+          >
+            {group ? <GroupIcon name={group.icon} size={16} /> : <FolderOpen size={16} aria-hidden="true" />}
+            <span className={styles.groupName}>{group ? group.name : t('groups.noGroup')}</span>
+            {!trashed && <ChevronDown size={16} aria-hidden="true" />}
+          </button>
+          <button
+            type="button"
+            className={`${styles.groupChip} ${note.date ? styles.dateOn : ''}`}
+            disabled={trashed}
+            aria-label={t('editor.dateTitle')}
+            onClick={() => setSheet('date')}
+          >
+            <CalendarDays size={16} aria-hidden="true" />
+            <span className={styles.groupName}>
+              {note.date ? formatDay(note.date, i18n.language) : t('editor.dateAdd')}
+            </span>
+            {!trashed && <ChevronDown size={16} aria-hidden="true" />}
+          </button>
+        </div>
         <AutoTextarea
           className={styles.title}
           value={draft.title}
@@ -371,6 +370,7 @@ function Editor({ note }: { note: Note }) {
         <ColorPicker value={note.color} onChange={setColor} disabled={trashed} />
       </footer>
 
+      <DateSheet open={sheet === 'date'} value={note.date} onChange={setDate} onClose={() => setSheet(null)} />
       <GroupPickerSheet
         open={sheet === 'pick'}
         groups={groups ?? []}

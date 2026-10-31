@@ -1,5 +1,4 @@
 import {
-  Archive,
   FolderOpen,
   ListChecks,
   Pencil,
@@ -36,7 +35,6 @@ import styles from './NotesPage.module.css';
 
 const COPY = {
   active: { title: 'nav.notes', empty: 'list.emptyActive', hint: 'list.emptyActiveHint' },
-  archive: { title: 'nav.archive', empty: 'list.emptyArchive', hint: 'list.emptyArchiveHint' },
   trash: { title: 'nav.trash', empty: 'list.emptyTrash', hint: 'list.emptyTrashHint' },
 } as const;
 
@@ -142,7 +140,7 @@ export function NotesPage({ mode }: { mode: NotesView }) {
   );
 
   const emptyIcon =
-    mode === 'archive' ? <Archive size={28} /> : inTrash ? <Trash2 size={28} /> : <StickyNote size={28} />;
+    inTrash ? <Trash2 size={28} /> : <StickyNote size={28} />;
 
   return (
     <>

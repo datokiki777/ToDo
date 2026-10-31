@@ -3,11 +3,11 @@ import { startsOnTab, tabAction } from './tabNav';
 
 describe('tabAction', () => {
   it('opens a tab on top of Notes with a new history entry', () => {
-    expect(tabAction('/', '/archive', false)).toEqual({ kind: 'open', to: '/archive', replace: false });
+    expect(tabAction('/', '/calendar', false)).toEqual({ kind: 'open', to: '/calendar', replace: false });
   });
 
   it('switches between tabs without growing the history', () => {
-    expect(tabAction('/archive', '/trash', true)).toEqual({ kind: 'open', to: '/trash', replace: true });
+    expect(tabAction('/calendar', '/trash', true)).toEqual({ kind: 'open', to: '/trash', replace: true });
   });
 
   it('closes the open tab when it is tapped again', () => {
@@ -16,7 +16,7 @@ describe('tabAction', () => {
   });
 
   it('tapping Notes while a tab is open closes it', () => {
-    expect(tabAction('/archive', '/', true)).toEqual({ kind: 'close', viaBack: true });
+    expect(tabAction('/calendar', '/', true)).toEqual({ kind: 'close', viaBack: true });
   });
 
   it('tapping Notes on Notes only scrolls to the top', () => {
@@ -27,7 +27,7 @@ describe('tabAction', () => {
 describe('startsOnTab', () => {
   it('recognises the tab addresses only', () => {
     expect(startsOnTab('#/settings')).toBe(true);
-    expect(startsOnTab('#/archive')).toBe(true);
+    expect(startsOnTab('#/calendar')).toBe(true);
     expect(startsOnTab('#/trash')).toBe(true);
     expect(startsOnTab('#/')).toBe(false);
     expect(startsOnTab('')).toBe(false);

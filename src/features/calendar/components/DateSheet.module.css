@@ -1,0 +1,47 @@
+.quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: var(--bg);
+  font-weight: 650;
+}
+.on {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 18px;
+}
+.label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.input {
+  min-height: 52px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 1.0625rem;
+  outline: none;
+}
+.input:focus {
+  border-color: var(--accent);
+}
+.clear {
+  min-height: var(--tap);
+  margin-top: 14px;
+  padding: 0 4px;
+  color: var(--danger);
+  font-weight: 650;
+}

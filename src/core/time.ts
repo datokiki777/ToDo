@@ -61,3 +61,24 @@ export function formatDay(
     monthNames ? { day: 'numeric', month: 'long', year: 'numeric' } : { day: '2-digit', month: '2-digit', year: 'numeric' },
   ).format(date);
 }
+
+/** A short day for badges: "31 Oct", or "31.10" when there are no month names, plus the year if not this one. */
+export function formatDayShort(
+  key: string,
+  locale: string,
+  now: number = Date.now(),
+  monthNames: boolean = hasMonthNames(locale),
+): string {
+  const [y, m, d] = key.split('-').map(Number) as [number, number, number];
+  const sameYear = y === new Date(now).getFullYear();
+  if (!monthNames) {
+    // Written by hand so the order is never in doubt: day first.
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(d)}.${pad(m)}${sameYear ? '' : `.${String(y).slice(-2)}`}`;
+  }
+  return new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'short',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  }).format(new Date(y, m - 1, d));
+}

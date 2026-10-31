@@ -165,3 +165,16 @@
     background: color-mix(in srgb, var(--ink) 8%, transparent);
   }
 }
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 2px 0 8px;
+}
+.chips .groupChip {
+  margin: 0;
+}
+.dateOn {
+  background: color-mix(in srgb, var(--note-accent) 38%, transparent);
+}

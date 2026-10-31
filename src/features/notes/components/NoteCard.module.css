@@ -62,13 +62,23 @@
   font-weight: 600;
   color: var(--ink);
 }
+.tags {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin-right: auto;
+  overflow: hidden;
+}
 .group {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   min-width: 0;
-  margin-right: auto;
   color: var(--muted);
+}
+.dateText {
+  white-space: nowrap;
 }
 .group svg {
   flex: none;

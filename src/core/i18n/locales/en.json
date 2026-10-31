@@ -1,9 +1,9 @@
 {
   "nav": {
     "notes": "Notes",
-    "archive": "Archive",
     "trash": "Trash",
-    "settings": "Settings"
+    "settings": "Settings",
+    "calendar": "Calendar"
   },
   "common": {
     "cancel": "Cancel",
@@ -39,8 +39,6 @@
     "untitled": "Untitled",
     "emptyActive": "No notes yet",
     "emptyActiveHint": "Tap + to write your first note.",
-    "emptyArchive": "Archive is empty",
-    "emptyArchiveHint": "Notes you archive will show up here.",
     "emptyTrash": "Trash is empty",
     "emptyTrashHint": "Deleted notes stay here for {{days}} days, then they're deleted for good.",
     "noResults": "Nothing found",
@@ -75,20 +73,23 @@
     "markDone": "Mark as done",
     "pin": "Pin",
     "unpin": "Unpin",
-    "archive": "Archive",
-    "unarchive": "Move out of archive",
     "moveToTrash": "Move to trash",
     "toChecklist": "Turn into checklist",
     "toText": "Turn into text",
     "color": "Color",
     "edited": "Edited {{date}}",
     "movedToTrash": "Moved to trash",
-    "archived": "Archived",
-    "unarchived": "Moved out of archive",
     "restored": "Restored",
     "share": "Share",
     "addChecklist": "Add a checklist",
-    "addText": "Add text"
+    "addText": "Add text",
+    "dateAdd": "Date",
+    "dateTitle": "Date for this note",
+    "dateToday": "Today",
+    "dateTomorrow": "Tomorrow",
+    "dateNextWeek": "In a week",
+    "datePick": "Another day",
+    "dateClear": "Remove the date"
   },
   "settings": {
     "title": "Settings",
@@ -246,5 +247,41 @@
     "errorOffline": "No connection.",
     "errorAuto": "The automatic backup couldn't be made ({{code}}). Try “Back up now”.",
     "waiting": "{{count}} backup is waiting to be uploaded. It goes when the internet is back or when you open the app."
+  },
+  "calendar": {
+    "title": "Calendar",
+    "today": "Today",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "months": [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ],
+    "weekdays": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun"
+    ],
+    "dayTitle": "{{month}} {{day}}",
+    "notesCount_one": "{{count}} note",
+    "notesCount_other": "{{count}} notes",
+    "empty": "No notes on this day",
+    "emptyHint": "Tap + and the new note gets this date.",
+    "newNote": "New note for this day",
+    "cell": "{{month}} {{day}}, notes: {{count}}"
   }
 }

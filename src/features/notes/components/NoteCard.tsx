@@ -1,7 +1,7 @@
-import { Link2, Pin } from 'lucide-react';
+import { CalendarDays, Link2, Pin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { formatShortDate } from '@/core/time';
+import { formatDayShort, formatShortDate } from '@/core/time';
 import type { ViewMode } from '@/core/settings/store';
 import { GroupIcon } from '@/features/groups/icons';
 import type { Group } from '@/features/groups/model';
@@ -46,10 +46,20 @@ export function NoteCard({ note, view, group, daysLeft }: Props) {
       </div>
       {preview.length > 0 && <p className={styles.preview}>{preview.join(' · ')}</p>}
       <div className={styles.foot}>
-        {group && (
-          <span className={styles.group}>
-            <GroupIcon name={group.icon} size={13} />
-            <span className={styles.groupName}>{group.name}</span>
+        {(group || note.date) && (
+          <span className={styles.tags}>
+            {group && (
+              <span className={styles.group}>
+                <GroupIcon name={group.icon} size={13} />
+                <span className={styles.groupName}>{group.name}</span>
+              </span>
+            )}
+            {note.date && (
+              <span className={styles.group}>
+                <CalendarDays size={13} aria-hidden="true" />
+                <span className={styles.dateText}>{formatDayShort(note.date, i18n.language)}</span>
+              </span>
+            )}
           </span>
         )}
         {links.length > 1 && (

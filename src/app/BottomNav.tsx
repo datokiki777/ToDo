@@ -1,4 +1,4 @@
-import { Archive, Settings, StickyNote, Trash2 } from 'lucide-react';
+import { CalendarDays, Settings, StickyNote, Trash2 } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
@@ -7,7 +7,7 @@ import { tabAction } from './tabNav';
 
 const ITEMS = [
   { to: '/', key: 'nav.notes', icon: StickyNote, end: true },
-  { to: '/archive', key: 'nav.archive', icon: Archive, end: false },
+  { to: '/calendar', key: 'nav.calendar', icon: CalendarDays, end: false },
   { to: '/trash', key: 'nav.trash', icon: Trash2, end: false },
   { to: '/settings', key: 'nav.settings', icon: Settings, end: false },
 ] as const;

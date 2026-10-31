@@ -5,7 +5,7 @@ export type TabAction =
   | { kind: 'open'; to: string; replace: boolean };
 
 /**
- * What a tap on a bottom tab should do. Notes is the home screen; Archive, Trash and Settings
+ * What a tap on a bottom tab should do. Notes is the home screen; Calendar, Trash and Settings
  * open on top of it, and tapping the open one again closes it.
  */
 export function tabAction(current: string, target: string, openedFromNotes: boolean): TabAction {
@@ -15,7 +15,7 @@ export function tabAction(current: string, target: string, openedFromNotes: bool
   return { kind: 'open', to: target, replace: current !== '/' };
 }
 
-const TAB_HASHES = new Set(['#/archive', '#/trash', '#/settings']);
+const TAB_HASHES = new Set(['#/calendar', '#/trash', '#/settings']);
 
 /** A fresh start (or reload) always begins on Notes, never on a tab left open last time. */
 export function startsOnTab(hash: string): boolean {

@@ -41,6 +41,7 @@ export function noteToCloud(note: Note): Record<string, unknown> {
     items: note.items.map((item) => ({ id: item.id, text: item.text, done: item.done })),
     color: note.color,
     groupId: note.groupId,
+    date: note.date,
     pinned: note.pinned,
     archived: note.archived,
     createdAt: note.createdAt,

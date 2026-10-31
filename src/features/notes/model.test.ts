@@ -25,6 +25,7 @@ function note(partial: Partial<Note> = {}): Note {
     items: [],
     color: 'yellow',
     groupId: null,
+    date: null,
     pinned: false,
     archived: false,
     createdAt: 1,
@@ -137,9 +138,8 @@ describe('selectNotes', () => {
   const trash = note({ id: 'trash', body: 'trash', deletedAt: 99 });
   const all = [a, b, c, arch, trash];
 
-  it('separates active, archive and trash', () => {
-    expect(selectNotes(all, { ...base, view: 'active' }).map((n) => n.id)).toEqual(['c', 'b', 'a']);
-    expect(selectNotes(all, { ...base, view: 'archive' }).map((n) => n.id)).toEqual(['arch']);
+  it('separates notes and trash; an old "archived" note is just an ordinary note', () => {
+    expect(selectNotes(all, { ...base, view: 'active' }).map((n) => n.id)).toEqual(['c', 'b', 'a', 'arch']);
     expect(selectNotes(all, { ...base, view: 'trash' }).map((n) => n.id)).toEqual(['trash']);
   });
 
@@ -151,6 +151,7 @@ describe('selectNotes', () => {
     // red comes before blue in the palette order; pinned still first
     expect(selectNotes(all, { ...base, view: 'active', sortBy: 'color' }).map((n) => n.id)).toEqual([
       'c',
+      'arch', // yellow (the first colour), an old archived note taking part like any other
       'b',
       'a',
     ]);
@@ -176,12 +177,12 @@ describe('contentForSave', () => {
 });
 
 describe('blank notes are not listed', () => {
-  it('hides blank notes in active and archive but not in trash', () => {
+  it('hides blank notes in the list but not in the trash', () => {
     const blank = note({ id: 'blank' });
     const blankTrashed = note({ id: 'blank-trash', deletedAt: 5 });
     const q = { query: '', color: null, groupId: null, sortBy: 'date' } as const;
     expect(selectNotes([blank], { ...q, view: 'active' })).toEqual([]);
-    expect(selectNotes([{ ...blank, archived: true }], { ...q, view: 'archive' })).toEqual([]);
+    expect(selectNotes([{ ...blank, archived: true }], { ...q, view: 'active' })).toEqual([]);
     expect(selectNotes([blankTrashed], { ...q, view: 'trash' })).toHaveLength(1);
   });
 });
@@ -192,16 +193,17 @@ describe('groups in lists', () => {
   const inA2 = note({ id: 'a2', body: 'a', groupId: 'A', updatedAt: 2 });
   const inB = note({ id: 'b1', body: 'b', groupId: 'B', updatedAt: 1 });
   const none = note({ id: 'n1', body: 'n', updatedAt: 4 });
-  const archivedA = note({ id: 'a3', body: 'a', groupId: 'A', archived: true });
+  const archivedA = note({ id: 'a3', body: 'a', groupId: 'A', archived: true, updatedAt: 1 });
   const all = [inA, inA2, inB, none, archivedA];
 
   it('shows only the chosen group, or everything when none is chosen', () => {
-    expect(selectNotes(all, { ...q, view: 'active', groupId: 'A' }).map((n) => n.id)).toEqual(['a1', 'a2']);
+    expect(selectNotes(all, { ...q, view: 'active', groupId: 'A' }).map((n) => n.id)).toEqual(['a1', 'a2', 'a3']);
     expect(selectNotes(all, { ...q, view: 'active', groupId: null }).map((n) => n.id)).toEqual([
       'n1',
       'a1',
       'a2',
       'b1',
+      'a3',
     ]);
   });
 
@@ -213,10 +215,9 @@ describe('groups in lists', () => {
 
   it('counts per group for the cards, per view', () => {
     const active = countNotes(all, 'active');
-    expect(active.total).toBe(4);
-    expect(active.byGroup.get('A')).toBe(2);
+    expect(active.total).toBe(5);
+    expect(active.byGroup.get('A')).toBe(3);
     expect(active.byGroup.get('B')).toBe(1);
-    expect(countNotes(all, 'archive').byGroup.get('A')).toBe(1);
   });
 
   it('parses groupId from backups, defaulting to no group', () => {
@@ -276,6 +277,21 @@ describe('a note with both text and a checklist', () => {
 
   it('survives the trip to the cloud and back', () => {
     const original = mixed({ updatedAt: 9, kind: 'text' });
+    expect(parseNote({ ...noteToCloud(original), id: original.id })).toEqual(original);
+  });
+});
+
+describe('the calendar day of a note', () => {
+  it('is read only when it is a real day', () => {
+    expect(parseNote({ id: 'a', updatedAt: 1, date: '2026-10-30' })?.date).toBe('2026-10-30');
+    expect(parseNote({ id: 'a', updatedAt: 1, date: '2026-02-30' })?.date).toBeNull();
+    expect(parseNote({ id: 'a', updatedAt: 1, date: '30.10.2026' })?.date).toBeNull();
+    expect(parseNote({ id: 'a', updatedAt: 1, date: 20261030 })?.date).toBeNull();
+    expect(parseNote({ id: 'a', updatedAt: 1 })?.date).toBeNull(); // notes made before calendars existed
+  });
+
+  it('travels to the cloud and back', () => {
+    const original = note({ updatedAt: 9, date: '2026-12-31' });
     expect(parseNote({ ...noteToCloud(original), id: original.id })).toEqual(original);
   });
 });

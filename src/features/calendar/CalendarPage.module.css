@@ -1,0 +1,118 @@
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  padding: 0 12px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  padding: 4px 12px 8px;
+}
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-height: 50px;
+  padding-top: 6px;
+  border-radius: 12px;
+  color: var(--ink);
+}
+.outside {
+  color: var(--muted);
+  opacity: 0.55;
+}
+.num {
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1;
+}
+.today .num {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  color: var(--accent);
+}
+.selected {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.selected .num,
+.selected.today .num {
+  color: var(--accent-ink);
+  outline-color: var(--accent-ink);
+}
+.dots {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 7px;
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--note-accent);
+}
+.selected .dot {
+  box-shadow: 0 0 0 1.5px var(--accent-ink);
+}
+.more {
+  font-size: 0.6875rem;
+  line-height: 1;
+}
+.panel {
+  padding: 8px 12px 160px;
+}
+.dayHeading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 4px 4px 10px;
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+.count {
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(var(--nav-h) + var(--safe-bottom) + 16px);
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
+}
+@media (hover: hover) {
+  .cell:hover:not(.selected) {
+    background: var(--accent-soft);
+  }
+}

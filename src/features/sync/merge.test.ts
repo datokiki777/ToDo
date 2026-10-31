@@ -11,6 +11,7 @@ const note = (p: Partial<Note> = {}): Note => ({
   items: [],
   color: 'yellow',
   groupId: null,
+  date: null,
   pinned: false,
   archived: false,
   createdAt: 1,
