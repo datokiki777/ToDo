@@ -53,11 +53,20 @@ export function ListOptionsMenu({ color, onColorChange }: Props) {
             <button
               type="button"
               role="menuitemradio"
-              aria-checked={sortBy === 'date'}
+              aria-checked={sortBy === 'modified'}
               className={styles.item}
-              onClick={() => choose(() => setSortBy('date'))}
+              onClick={() => choose(() => setSortBy('modified'))}
             >
-              {t('list.byDate')}
+              {t('list.byModified')}
+            </button>
+            <button
+              type="button"
+              role="menuitemradio"
+              aria-checked={sortBy === 'created'}
+              className={styles.item}
+              onClick={() => choose(() => setSortBy('created'))}
+            >
+              {t('list.byCreated')}
             </button>
             <button
               type="button"

@@ -201,6 +201,7 @@ export function NotesPage({ mode }: { mode: NotesView }) {
                 view={viewMode}
                 group={activeGroupId === null && note.groupId ? groupById.get(note.groupId) : undefined}
                 daysLeft={inTrash && note.deletedAt !== null ? trashDaysLeft(note.deletedAt) : undefined}
+                showDate={sortBy === 'created' ? 'created' : 'updated'}
               />
             </li>
           ))}

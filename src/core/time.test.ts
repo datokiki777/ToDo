@@ -42,3 +42,11 @@ describe('formatDayShort', () => {
     expect(formatDayShort('2027-12-05', 'en', now, true)).toMatch(/2027/);
   });
 });
+
+describe('formatShortDate without month names', () => {
+  const now = new Date(2026, 9, 31, 12).getTime();
+  it('always writes the day first', () => {
+    expect(formatShortDate(new Date(2026, 9, 24, 9).getTime(), 'en', now, false)).toBe('24.10');
+    expect(formatShortDate(new Date(2025, 2, 5, 9).getTime(), 'en', now, false)).toBe('05.03.2025');
+  });
+});

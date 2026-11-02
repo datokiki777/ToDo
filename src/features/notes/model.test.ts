@@ -130,7 +130,7 @@ describe('model', () => {
 });
 
 describe('selectNotes', () => {
-  const base = { query: '', color: null, groupId: null, sortBy: 'date' } as const;
+  const base = { query: '', color: null, groupId: null, sortBy: 'modified' } as const;
   const a = note({ id: 'a', body: 'a', updatedAt: 10, color: 'blue' });
   const b = note({ id: 'b', body: 'b', updatedAt: 30, color: 'red' });
   const c = note({ id: 'c', body: 'c', updatedAt: 20, color: 'blue', pinned: true });
@@ -180,7 +180,7 @@ describe('blank notes are not listed', () => {
   it('hides blank notes in the list but not in the trash', () => {
     const blank = note({ id: 'blank' });
     const blankTrashed = note({ id: 'blank-trash', deletedAt: 5 });
-    const q = { query: '', color: null, groupId: null, sortBy: 'date' } as const;
+    const q = { query: '', color: null, groupId: null, sortBy: 'modified' } as const;
     expect(selectNotes([blank], { ...q, view: 'active' })).toEqual([]);
     expect(selectNotes([{ ...blank, archived: true }], { ...q, view: 'active' })).toEqual([]);
     expect(selectNotes([blankTrashed], { ...q, view: 'trash' })).toHaveLength(1);
@@ -188,7 +188,7 @@ describe('blank notes are not listed', () => {
 });
 
 describe('groups in lists', () => {
-  const q = { query: '', color: null, sortBy: 'date' } as const;
+  const q = { query: '', color: null, sortBy: 'modified' } as const;
   const inA = note({ id: 'a1', body: 'a', groupId: 'A', updatedAt: 3 });
   const inA2 = note({ id: 'a2', body: 'a', groupId: 'A', updatedAt: 2 });
   const inB = note({ id: 'b1', body: 'b', groupId: 'B', updatedAt: 1 });
@@ -293,5 +293,52 @@ describe('the calendar day of a note', () => {
   it('travels to the cloud and back', () => {
     const original = note({ updatedAt: 9, date: '2026-12-31' });
     expect(parseNote({ ...noteToCloud(original), id: original.id })).toEqual(original);
+  });
+});
+
+describe('sorting: last changed, date created, colour', () => {
+  const q = { view: 'active', query: '', color: null, groupId: null } as const;
+  // made in the order a, b, c; but b was edited last and a before that
+  const a = note({ id: 'a', body: 'a', createdAt: 100, updatedAt: 500 });
+  const b = note({ id: 'b', body: 'b', createdAt: 200, updatedAt: 900 });
+  const c = note({ id: 'c', body: 'c', createdAt: 300, updatedAt: 300 });
+  const ids = (sortBy: 'modified' | 'created' | 'color', notes = [a, b, c]) =>
+    selectNotes(notes, { ...q, sortBy }).map((n) => n.id);
+
+  it('"last changed" puts the most recently edited note first', () => {
+    expect(ids('modified')).toEqual(['b', 'a', 'c']);
+  });
+
+  it('"date created" puts the newest note first, whatever was edited since', () => {
+    expect(ids('created')).toEqual(['c', 'b', 'a']);
+  });
+
+  it('editing an old note moves it up in one order and not in the other', () => {
+    const edited = { ...a, updatedAt: 2000 };
+    expect(ids('modified', [edited, b, c])).toEqual(['a', 'b', 'c']);
+    expect(ids('created', [edited, b, c])).toEqual(['c', 'b', 'a']);
+  });
+
+  it('pinned notes stay on top in every order', () => {
+    const pinned = { ...c, pinned: true };
+    expect(ids('modified', [a, b, pinned])[0]).toBe('c');
+    expect(ids('created', [a, b, pinned])[0]).toBe('c');
+    expect(ids('color', [a, b, pinned])[0]).toBe('c');
+  });
+
+  it('notes that tie are ordered by the other date, so the list does not jump about', () => {
+    const x = note({ id: 'x', body: 'x', createdAt: 10, updatedAt: 700 });
+    const y = note({ id: 'y', body: 'y', createdAt: 20, updatedAt: 700 });
+    expect(ids('modified', [x, y])).toEqual(['y', 'x']);
+    const p = note({ id: 'p', body: 'p', createdAt: 50, updatedAt: 1 });
+    const r = note({ id: 'r', body: 'r', createdAt: 50, updatedAt: 9 });
+    expect(ids('created', [p, r])).toEqual(['r', 'p']);
+  });
+
+  it('by colour: colours in their order, and within a colour the most recently changed first', () => {
+    const red1 = note({ id: 'r1', body: 'x', color: 'red', updatedAt: 1 });
+    const red2 = note({ id: 'r2', body: 'x', color: 'red', updatedAt: 5 });
+    const yellow = note({ id: 'y1', body: 'x', color: 'yellow', updatedAt: 3 });
+    expect(ids('color', [red1, red2, yellow])).toEqual(['y1', 'r2', 'r1']);
   });
 });

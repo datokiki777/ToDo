@@ -1,7 +1,8 @@
 import { isNoteEmpty, matchesQuery, NOTE_COLORS, type Note, type NoteColor } from './model';
 
 export type NotesView = 'active' | 'trash';
-export type SortBy = 'date' | 'color';
+/** Last changed, date created, or by colour. */
+export type SortBy = 'modified' | 'created' | 'color';
 
 export interface NotesQuery {
   view: NotesView;
@@ -34,7 +35,9 @@ export function selectNotes(notes: Note[], { view, query, color, groupId, sortBy
       if (view === 'active' && a.pinned !== b.pinned) return a.pinned ? -1 : 1;
       if (view === 'trash') return (b.deletedAt ?? 0) - (a.deletedAt ?? 0);
       if (sortBy === 'color' && a.color !== b.color) return colorRank(a.color) - colorRank(b.color);
-      return b.updatedAt - a.updatedAt;
+      // Newest first. Notes that tie (e.g. all touched by a restore) fall back to the other date.
+      if (sortBy === 'created') return b.createdAt - a.createdAt || b.updatedAt - a.updatedAt;
+      return b.updatedAt - a.updatedAt || b.createdAt - a.createdAt;
     });
 }
 

@@ -28,7 +28,6 @@
     "allColors": "All colors",
     "sortAndView": "Sort and view",
     "sortBy": "Sort by",
-    "byDate": "Date",
     "byColor": "Color",
     "view": "View",
     "viewList": "List",
@@ -47,7 +46,9 @@
     "filterByColor": "Filter by color",
     "cards": "Cards",
     "compact": "Titles only",
-    "compactHint": "Hides the first line, so cards are lower"
+    "compactHint": "Hides the first line, so cards are lower",
+    "byModified": "Last changed",
+    "byCreated": "Date created"
   },
   "trash": {
     "empty": "Empty trash",

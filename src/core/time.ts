@@ -22,12 +22,14 @@ export function formatShortDate(
   if (date.toDateString() === today.toDateString()) {
     return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(date);
   }
-  const month = monthNames ? 'short' : '2-digit';
-  const day = monthNames ? 'numeric' : '2-digit';
-  if (date.getFullYear() === today.getFullYear()) {
-    return new Intl.DateTimeFormat(locale, { day, month }).format(date);
+  const sameYear = date.getFullYear() === today.getFullYear();
+  if (!monthNames) {
+    // Written by hand so the order is never in doubt: day first ("24.10", "24.10.2025").
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}${sameYear ? '' : `.${date.getFullYear()}`}`;
   }
-  return new Intl.DateTimeFormat(locale, { day, month, year: 'numeric' }).format(date);
+  if (sameYear) return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(date);
+  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
 }
 
 export function formatLongDate(

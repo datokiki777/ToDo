@@ -6,6 +6,19 @@ import type { SortBy } from '@/features/notes/selectors';
 export type ThemePreference = 'system' | 'light' | 'dark';
 export type ViewMode = 'list' | 'grid';
 
+const SORTS: SortBy[] = ['modified', 'created', 'color'];
+
+/**
+ * Settings saved by an older version are brought up to date. Before, the sort was "date", which
+ * ordered by when a note was last changed: that is now called "modified".
+ */
+export function migrateSettings(persisted: unknown, _version: number): Record<string, unknown> {
+  const state = typeof persisted === 'object' && persisted !== null ? { ...(persisted as Record<string, unknown>) } : {};
+  const sort = state.sortBy === 'date' ? 'modified' : state.sortBy;
+  state.sortBy = SORTS.includes(sort as SortBy) ? sort : 'modified';
+  return state;
+}
+
 interface SettingsState {
   language: Language;
   theme: ThemePreference;
@@ -27,7 +40,7 @@ export const useSettings = create<SettingsState>()(
       language: DEFAULT_LANGUAGE,
       theme: 'system',
       viewMode: 'list',
-      sortBy: 'date',
+      sortBy: 'modified',
       compactCards: false,
       setLanguage: (language) => set({ language }),
       setTheme: (theme) => set({ theme }),
@@ -37,6 +50,8 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: 'todo.settings',
+      version: 1,
+      migrate: migrateSettings as never,
       partialize: ({ language, theme, viewMode, sortBy, compactCards }) => ({
         language,
         theme,

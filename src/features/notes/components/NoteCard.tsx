@@ -18,9 +18,11 @@ interface Props {
   group?: Group;
   /** In the trash: days before it is deleted for good (shown instead of the time). */
   daysLeft?: number;
+  /** Which date to show: when it was last changed (usual), or when it was made. */
+  showDate?: 'updated' | 'created';
 }
 
-export function NoteCard({ note, view, group, daysLeft }: Props) {
+export function NoteCard({ note, view, group, daysLeft, showDate = 'updated' }: Props) {
   const { t, i18n } = useTranslation();
   // Titles only, if chosen. Not in the trash, where the first line helps to tell notes apart.
   const compact = useSettings((s) => s.compactCards) && daysLeft === undefined;
@@ -79,7 +81,9 @@ export function NoteCard({ note, view, group, daysLeft }: Props) {
         {daysLeft !== undefined ? (
           <span className={styles.date}>{t('trash.daysLeft', { count: daysLeft })}</span>
         ) : (
-          <time className={styles.date}>{formatShortDate(note.updatedAt, i18n.language)}</time>
+          <time className={styles.date}>
+            {formatShortDate(showDate === 'created' ? note.createdAt : note.updatedAt, i18n.language)}
+          </time>
         )}
       </div>
     </Link>
