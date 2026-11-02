@@ -19,6 +19,8 @@ export function ListOptionsMenu({ color, onColorChange }: Props) {
   const viewMode = useSettings((s) => s.viewMode);
   const setSortBy = useSettings((s) => s.setSortBy);
   const setViewMode = useSettings((s) => s.setViewMode);
+  const compact = useSettings((s) => s.compactCards);
+  const setCompact = useSettings((s) => s.setCompactCards);
 
   const choose = (apply: () => void) => {
     apply();
@@ -84,6 +86,23 @@ export function ListOptionsMenu({ color, onColorChange }: Props) {
               onClick={() => choose(() => setViewMode('grid'))}
             >
               {t('list.viewGrid')}
+            </button>
+            <p className={styles.heading}>{t('list.cards')}</p>
+            {/* stays open, so the change can be seen right behind the menu */}
+            <button
+              type="button"
+              role="switch"
+              aria-checked={compact}
+              className={styles.switchRow}
+              onClick={() => setCompact(!compact)}
+            >
+              <span className={styles.switchText}>
+                <span>{t('list.compact')}</span>
+                <small>{t('list.compactHint')}</small>
+              </span>
+              <span className={styles.track} aria-hidden="true">
+                <span className={styles.thumb} />
+              </span>
             </button>
           </div>
         </>

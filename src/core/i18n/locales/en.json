@@ -44,7 +44,10 @@
     "noResults": "Nothing found",
     "noResultsHint": "Try another word or clear the color filter.",
     "pinned": "Pinned",
-    "filterByColor": "Filter by color"
+    "filterByColor": "Filter by color",
+    "cards": "Cards",
+    "compact": "Titles only",
+    "compactHint": "Hides the first line, so cards are lower"
   },
   "trash": {
     "empty": "Empty trash",

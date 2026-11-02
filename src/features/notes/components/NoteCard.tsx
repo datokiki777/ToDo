@@ -2,7 +2,7 @@ import { CalendarDays, Link2, Pin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { formatDayShort, formatShortDate } from '@/core/time';
-import type { ViewMode } from '@/core/settings/store';
+import { useSettings, type ViewMode } from '@/core/settings/store';
 import { GroupIcon } from '@/features/groups/icons';
 import type { Group } from '@/features/groups/model';
 import { linkLabel, linkTarget } from '../linkProps';
@@ -22,6 +22,8 @@ interface Props {
 
 export function NoteCard({ note, view, group, daysLeft }: Props) {
   const { t, i18n } = useTranslation();
+  // Titles only, if chosen. Not in the trash, where the first line helps to tell notes apart.
+  const compact = useSettings((s) => s.compactCards) && daysLeft === undefined;
   const rawTitle = displayTitle(note);
   const preview = previewLines(note, 4).map((line) => asOnlyLink(line)?.short ?? line);
   const progress = hasChecklist(note) ? checklistProgress(note) : null;
@@ -37,7 +39,7 @@ export function NoteCard({ note, view, group, daysLeft }: Props) {
   }
 
   return (
-    <div className={`${styles.wrap} ${single ? styles.hasOpen : ''}`} data-color={note.color}>
+    <div className={`${styles.wrap} ${single ? styles.hasOpen : ''} ${compact ? styles.compact : ''}`} data-color={note.color}>
     <Link to={`/note/${note.id}`} className={styles.card} data-view={view}>
       <div className={styles.head}>
         <span className={styles.title}>{title || t('list.untitled')}</span>
@@ -45,7 +47,7 @@ export function NoteCard({ note, view, group, daysLeft }: Props) {
           <Pin size={15} className={styles.pin} aria-label={t('list.pinned')} />
         )}
       </div>
-      {preview.length > 0 && <p className={styles.preview}>{preview.join(' · ')}</p>}
+      {!compact && preview.length > 0 && <p className={styles.preview}>{preview.join(' · ')}</p>}
       <div className={styles.foot}>
         {(group || note.date) && (
           <span className={styles.tags}>

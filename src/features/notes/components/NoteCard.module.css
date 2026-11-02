@@ -114,3 +114,14 @@
   gap: 4px;
   font-weight: 600;
 }
+
+/* Titles only: the line under the title is gone, so the card is one line lower. */
+.compact {
+  height: 4.25rem;
+}
+.compact .open {
+  top: 4px;
+  right: 6px;
+  width: 40px;
+  height: 40px;
+}
