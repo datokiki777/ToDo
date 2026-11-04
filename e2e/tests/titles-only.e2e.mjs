@@ -63,8 +63,12 @@ await openMenu(); await page.locator('[role=menuitemradio]:has-text("სია")
 // ---- the trash keeps its first line, so deleted notes stay recognisable ----
 await card('ერთი სათაური').first().tap(); await page.waitForSelector('textarea');
 await page.tap('button[aria-label="ნაგავში გადატანა"]'); await sleep(500);
-await page.tap('nav a:has-text("ნაგავი")'); await page.waitForSelector('ul li');
-ok('in the trash the first line is still shown', (await page.locator('ul li').first().innerText()).includes('პირველი ხაზი'));
+await page.tap('nav a:has-text("ნაგავი")');
+await page.locator('h1:has-text("ნაგავი")').waitFor(); // wait for the trash page itself, not the list that is leaving
+const trashed = page.locator('ul li', { hasText: 'ერთი სათაური' });
+await trashed.waitFor({ timeout: 8000 });
+const trashedText = (await trashed.innerText()).replace(/\n+/g, ' | ');
+ok(`in the trash the first line is still shown (${trashedText.slice(0, 70)})`, trashedText.includes('პირველი ხაზი'));
 await page.tap('nav a:has-text("ნოტები")');
 
 // ---- and off again ----
