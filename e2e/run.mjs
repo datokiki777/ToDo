@@ -70,6 +70,12 @@ for (const file of files) {
     for (const l of fails) console.log(`    ${l}`);
     if (errors !== 'errors: none') console.log(`    ${errors}`);
     if (code !== 0 || ok === 0) console.log(out.split('\n').slice(-25).map((l) => `    | ${l}`).join('\n'));
+    // On GitHub the reason is also shown as a note on the run, readable without downloading logs.
+    if (process.env.GITHUB_ACTIONS) {
+      const detail = [...fails, errors, ...out.split('\n').filter((l) => /Error|Timeout|waiting for|locator/.test(l)).slice(0, 12)].join('\n').slice(0, 3000);
+      const encoded = detail.replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+      console.log(`::error title=Browser test failed: ${file.replace('.e2e.mjs', '')}::${encoded}`);
+    }
   }
 }
 
