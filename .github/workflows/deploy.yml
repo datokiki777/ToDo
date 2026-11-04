@@ -27,6 +27,12 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - name: The test-only sign-in must not be in the real app
+        run: |
+          if grep -rlE "fake-auth|__cloud" dist/assets; then
+            echo "Test-only code found in the production build"
+            exit 1
+          fi
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

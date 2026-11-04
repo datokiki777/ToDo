@@ -59,9 +59,24 @@ describe('notes repository', () => {
     const blank = await repo.create();
     const written = await repo.create();
     await repo.update(written.id, { title: 'x' });
-    expect(await repo.purgeEmpty()).toBe(1);
+    expect(await repo.purgeEmpty(0)).toBe(1);
     expect(await repo.get(blank.id)).toBeUndefined();
     expect(await repo.get(written.id)).toBeDefined();
+  });
+
+  it('leaves a blank note made a moment ago alone: it is being written (an app-icon shortcut)', async () => {
+    const fresh = await repo.create();
+    expect(await repo.purgeEmpty()).toBe(0);
+    expect(await repo.get(fresh.id)).toBeDefined();
+  });
+
+  it('but tidies one left over from an interrupted session (older than a minute)', async () => {
+    const old = await repo.create();
+    clock += 61_000;
+    const fresh = await repo.create();
+    expect(await repo.purgeEmpty()).toBe(1);
+    expect(await repo.get(old.id)).toBeUndefined();
+    expect(await repo.get(fresh.id)).toBeDefined();
   });
 
   it('merges imports: newer wins, older is skipped, unknown is added', async () => {

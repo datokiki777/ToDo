@@ -34,7 +34,8 @@ export interface NotesRepository {
   restore(id: string): Promise<void>;
   deleteForever(id: string): Promise<void>;
   emptyTrash(): Promise<number>;
-  purgeEmpty(): Promise<number>;
+  /** Removes blank notes older than `minAgeMs` (a note made a moment ago is still being written). */
+  purgeEmpty(minAgeMs?: number): Promise<number>;
   /** Deletes trashed notes that have been in the trash longer than `retentionMs`. */
   purgeExpiredTrash(retentionMs: number): Promise<number>;
   deleteIfEmpty(id: string): Promise<boolean>;
@@ -45,6 +46,12 @@ export interface NotesRepository {
  * The only place that talks to the database about notes. UI code goes through this interface,
  * so a sync layer can later be added here without touching any component.
  */
+/**
+ * A blank note younger than this is left alone by the start-up tidy-up: it is being written right now
+ * (e.g. a note just made by an app-icon shortcut), not left over from an interrupted session.
+ */
+export const BLANK_NOTE_GRACE_MS = 60_000;
+
 export function createNotesRepository(
   db: TodoDB = defaultDb,
   now: () => number = Date.now,
@@ -124,10 +131,11 @@ export function createNotesRepository(
     },
 
     /** Remove blank notes left behind when someone opens "new note" and leaves without typing. */
-    async purgeEmpty() {
+    async purgeEmpty(minAgeMs = BLANK_NOTE_GRACE_MS) {
       return db.transaction('rw', db.notes, db.sync, db.tombstones, async () => {
+        const t = now();
         const ids = (await db.notes.toArray())
-          .filter((note) => note.deletedAt === null && isNoteEmpty(note))
+          .filter((note) => note.deletedAt === null && isNoteEmpty(note) && t - note.updatedAt >= minAgeMs)
           .map((note) => note.id);
         await purgeNotes(db, ids, now());
         return ids.length;

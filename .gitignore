@@ -3,3 +3,7 @@ dist
 dev-dist
 *.local
 .DS_Store
+
+# browser tests
+.e2e-dist
+e2e/.out

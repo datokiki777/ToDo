@@ -34,6 +34,16 @@ export interface SyncStatus {
   failed: number;
   /** Why: "too-large", or the error code the cloud answered with. */
   failedReason: string | null;
+  /** The documents that could not be sent, and why (at most 20, for the diagnostics screen). */
+  failures: FailureInfo[];
+}
+
+export interface FailureInfo {
+  collection: Collection;
+  id: string;
+  reason: string;
+  /** Size of the document as it would be sent. */
+  bytes: number;
 }
 
 export interface EngineOptions {
@@ -80,6 +90,7 @@ export class SyncEngine {
     conflicts: 0,
     failed: 0,
     failedReason: null,
+    failures: [],
   };
   private started = false;
   private unsubscribers: Array<() => void> = [];
@@ -92,6 +103,18 @@ export class SyncEngine {
   private retryDelay = 5_000;
   private needsResubscribe = false;
   private readonly failedIds = new Set<string>();
+  private readonly failures = new Map<string, FailureInfo>();
+
+  private failDoc(item: PushItem, reason: string): void {
+    this.failedIds.add(item.id);
+    this.failures.set(`${item.collection}/${item.id}`, {
+      collection: item.collection,
+      id: item.id,
+      reason,
+      bytes: sizeOf(item.data),
+    });
+    this.set({ failed: this.status.failed + 1, failedReason: reason, failures: [...this.failures.values()].slice(0, 20) });
+  }
 
   constructor(private readonly options: EngineOptions) {
     this.db = options.db;
@@ -151,11 +174,13 @@ export class SyncEngine {
     this.pushTimer = undefined;
     // Asking again also gives the documents that failed before another chance.
     this.failedIds.clear();
+    this.failures.clear();
     this.set({
       state: this.ready.notes && this.ready.groups ? 'syncing' : 'starting',
       error: null,
       failed: 0,
       failedReason: null,
+      failures: [],
     });
     this.enqueue(async () => {
       if (this.needsResubscribe) await this.subscribe();
@@ -443,8 +468,7 @@ export class SyncEngine {
     const sendable: PushItem[] = [];
     for (const item of items) {
       if (sizeOf(item.data) > MAX_DOC_BYTES) {
-        this.failedIds.add(item.id);
-        this.set({ failed: this.status.failed + 1, failedReason: 'too-large' });
+        this.failDoc(item, 'too-large');
       } else {
         sendable.push(item);
       }
@@ -467,8 +491,7 @@ export class SyncEngine {
             pushed += 1;
           } catch (single) {
             if (!perDocument(errorCode(single))) throw single;
-            this.failedIds.add(item.id);
-            this.set({ failed: this.status.failed + 1, failedReason: errorCode(single) });
+            this.failDoc(item, errorCode(single));
           }
         }
       }

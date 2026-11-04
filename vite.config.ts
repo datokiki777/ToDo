@@ -52,6 +52,23 @@ export default defineConfig({
           { src: 'pwa-512.png', sizes: '512x512', type: 'image/png' },
           { src: 'maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
+        // Long-press the app icon on Android: straight to a new note.
+        shortcuts: [
+          {
+            name: 'ახალი ნოტა',
+            short_name: 'ნოტა',
+            description: 'ახალი ტექსტური ნოტა',
+            url: '/#/new/text',
+            icons: [{ src: 'pwa-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+          {
+            name: 'ახალი ჩეკლისტი',
+            short_name: 'ჩეკლისტი',
+            description: 'ახალი ჩეკლისტი',
+            url: '/#/new/checklist',
+            icons: [{ src: 'pwa-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+        ],
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],

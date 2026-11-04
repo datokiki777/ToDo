@@ -4,20 +4,24 @@ import { notesRepository } from './repository';
 
 /**
  * Saves the editor's draft shortly after typing stops, and always when the page is hidden or the
- * editor closes, so a note is never lost to a quick app switch. `flush` resolves when everything typed
- * so far has reached the database.
+ * editor closes, so a note is never lost to a quick app switch. If typing never stops, it is
+ * still saved at least every `maxWaitMs`. `flush` resolves when everything typed so far has
+ * reached the database.
  */
-export function useAutosave(id: string, draft: NoteContent, enabled: boolean, delayMs = 400) {
+export function useAutosave(id: string, draft: NoteContent, enabled: boolean, delayMs = 400, maxWaitMs = 3000) {
   const latest = useRef(draft);
   latest.current = draft;
   const saved = useRef<string | null>(null);
   if (saved.current === null) saved.current = JSON.stringify(contentForSave(draft));
   const timer = useRef<number | undefined>(undefined);
+  const maxTimer = useRef<number | undefined>(undefined);
   // Saves run one after another; every `flush` resolves only when all saves so far are written.
   const queue = useRef<Promise<void>>(Promise.resolve());
 
   const flush = useCallback((): Promise<void> => {
     window.clearTimeout(timer.current);
+    window.clearTimeout(maxTimer.current);
+    maxTimer.current = undefined;
     if (enabled) {
       const patch = contentForSave(latest.current);
       const snapshot = JSON.stringify(patch);
@@ -35,8 +39,10 @@ export function useAutosave(id: string, draft: NoteContent, enabled: boolean, de
     if (!enabled) return;
     if (JSON.stringify(contentForSave(draft)) === saved.current) return;
     timer.current = window.setTimeout(() => void flush(), delayMs);
+    // The pause above restarts with every keystroke; this one starts once, so continuous typing is saved too.
+    if (maxTimer.current === undefined) maxTimer.current = window.setTimeout(() => void flush(), maxWaitMs);
     return () => window.clearTimeout(timer.current);
-  }, [draft, enabled, delayMs, flush]);
+  }, [draft, enabled, delayMs, maxWaitMs, flush]);
 
   useEffect(() => {
     const onVisibility = () => {

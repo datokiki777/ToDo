@@ -1,0 +1,78 @@
+import { OUT, getJson, launchBrowser } from '../lib.mjs';
+const browser = await launchBrowser();
+const ok = (l, c) => console.log((c ? 'OK   ' : 'FAIL ') + l);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const errors = [];
+const signIn = async (page) => {
+  await page.click('nav a:has-text("პარამეტრები")');
+  const acc = page.locator('section[aria-labelledby="account-heading"]');
+  await acc.locator('button:has-text("ან ელფოსტით")').click();
+  await acc.locator('input[name=email]').fill('me@example.com');
+  await acc.locator('input[name=password]').fill('correct-horse-9');
+  await acc.getByRole('button', { name: 'ანგარიშის შექმნა', exact: true }).click();
+  await acc.locator('text=სინქრონიზებულია').first().waitFor({ timeout: 10000 }).catch(() => {});
+  return acc;
+};
+const seed = (page, notes) => page.evaluate((list) => new Promise((resolve, reject) => {
+  const req = indexedDB.open('todo-db', 50);
+  req.onupgradeneeded = () => { const d = req.result;
+    const n = d.createObjectStore('notes', { keyPath: 'id' }); for (const k of ['updatedAt', 'deletedAt', 'color', 'groupId']) n.createIndex(k, k);
+    const g = d.createObjectStore('groups', { keyPath: 'id' }); for (const k of ['updatedAt', 'deletedAt']) g.createIndex(k, k);
+    d.createObjectStore('sync', { keyPath: 'key' }); d.createObjectStore('tombstones', { keyPath: 'key' }); d.createObjectStore('pendingSnapshots', { keyPath: 'id' }); };
+  req.onsuccess = () => { const d = req.result; const tx = d.transaction('notes', 'readwrite'); const now = Date.now();
+    for (const [id, title, body] of list) tx.objectStore('notes').put({ id, kind: 'text', title, body, items: [], color: 'yellow', groupId: null, date: null, pinned: false, archived: false, createdAt: now, updatedAt: now, deletedAt: null });
+    tx.oncomplete = () => { d.close(); resolve(); }; tx.onerror = () => reject(tx.error); };
+}), notes);
+
+// ================= 1. everything is fine =================
+await getJson('http://127.0.0.1:4190/__cloud/reset');
+const ctx1 = await browser.newContext({ viewport: { width: 360, height: 800 }, deviceScaleFactor: 2, locale: 'ka-GE', serviceWorkers: 'block', permissions: ['clipboard-read', 'clipboard-write'] });
+const page = await ctx1.newPage();
+page.on('pageerror', (e) => errors.push(e.message));
+await page.goto('http://127.0.0.1:4190/manifest.webmanifest');
+await seed(page, [['fine-1', 'რამე ნოტა', 'ტექსტი'], ['fine-2', 'მეორე', 'ტექსტი']]);
+await page.goto('http://127.0.0.1:4190/'); await page.waitForSelector('ul li');
+const acc = await signIn(page);
+await sleep(3500);
+await acc.locator('button:has-text("დიაგნოსტიკა")').click();
+const sheet = page.locator('dialog[open]');
+await sheet.locator('text=სინქრონიზაცია').first().waitFor();
+const text = (await sheet.innerText()).replace(/\n+/g, ' | ');
+console.log('   sheet:', text.slice(0, 330));
+ok('the diagnostics sheet opens', text.includes('სინქრონიზაციის დიაგნოსტიკა'));
+ok('it says everything was sent, no problems', text.includes('ყველაფერი გაიგზავნა'));
+ok('it shows the notes on the phone and the version', text.includes('ნოტები') && /\d+\.\d+\.\d+ · /.test(text));
+await page.screenshot({ path: `${OUT}/dg-1-ok.png` });
+await sheet.locator('button:has-text("ანგარიშის კოპირება")').click(); await sleep(400);
+const report = await page.evaluate(() => navigator.clipboard.readText());
+console.log('   report:\n' + report.split('\n').map((l) => '     ' + l).join('\n'));
+ok('"copy report" puts a plain-text report on the clipboard', report.startsWith('ToDo diagnostics') && report.includes('sync: idle'));
+ok('the report has no e-mail address and no note text', !report.includes('@') && !report.includes('რამე ნოტა') && !report.includes('ტექსტი'));
+ok('and it says there were no failures', report.includes('failed: 0'));
+await ctx1.close();
+
+// ================= 2. a note that cannot be sent =================
+await getJson('http://127.0.0.1:4190/__cloud/reset');
+const ctx2 = await browser.newContext({ viewport: { width: 360, height: 800 }, deviceScaleFactor: 2, locale: 'ka-GE', serviceWorkers: 'block', permissions: ['clipboard-read', 'clipboard-write'] });
+const page2 = await ctx2.newPage();
+page2.on('pageerror', (e) => errors.push(e.message));
+await page2.goto('http://127.0.0.1:4190/manifest.webmanifest');
+await seed(page2, [['huge-note-0000-1111', 'ძალიან დიდი ნოტა', 'ა'.repeat(400000)], ['small-note', 'პატარა', 'ok']]);
+await page2.goto('http://127.0.0.1:4190/'); await page2.waitForSelector('ul li');
+const acc2 = await signIn(page2);
+await acc2.locator('text=ვერ მოხერხდა').waitFor({ timeout: 10000 });
+await acc2.locator('button:has-text("დიაგნოსტიკა")').click();
+const sheet2 = page2.locator('dialog[open]');
+await sheet2.locator('text=გაუგზავნელი ჩანაწერები').waitFor();
+const text2 = (await sheet2.innerText()).replace(/\n+/g, ' | ');
+console.log('   sheet:', text2.slice(0, 420));
+ok('the failed note is listed by its title', text2.includes('ძალიან დიდი ნოტა'));
+ok('with the reason (too large) and its size', text2.includes('too-large') && /\d+\.\d KB/.test(text2));
+ok('the small note is not listed as failed', !text2.includes('პატარა'));
+await page2.screenshot({ path: `${OUT}/dg-2-failed.png` });
+await sheet2.locator('button:has-text("ანგარიშის კოპირება")').click(); await sleep(400);
+const report2 = await page2.evaluate(() => navigator.clipboard.readText());
+ok('the copied report names it by the start of its id and the reason, not by title', report2.includes('notes/huge-not · too-large') && !report2.includes('ძალიან დიდი ნოტა'));
+ok('and says failed: 1 (too-large)', report2.includes('failed: 1 (too-large)'));
+console.log('errors:', errors.length ? errors : 'none');
+await browser.close();

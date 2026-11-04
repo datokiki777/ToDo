@@ -82,3 +82,30 @@
   height: 40px;
   margin-top: 0;
 }
+
+/* Only shown once something is ticked: tidy the list in one tap (with undo). */
+.bulk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 0 2px;
+}
+.bulkButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 9%, transparent);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.bulkButton:active {
+  background: color-mix(in srgb, var(--ink) 16%, transparent);
+}
+@media (hover: hover) {
+  .bulkButton:hover {
+    background: color-mix(in srgb, var(--ink) 14%, transparent);
+  }
+}

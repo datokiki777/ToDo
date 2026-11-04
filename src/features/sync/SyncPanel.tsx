@@ -4,6 +4,7 @@ import { formatShortDate } from '@/core/time';
 import { ConfirmDialog } from '@/core/ui/ConfirmDialog';
 import { useToasts } from '@/core/ui/toasts';
 import { resetLocalDataForCurrentAccount, syncNow, useSync } from './controller';
+import { DiagnosticsSheet } from './DiagnosticsSheet';
 import styles from './SyncPanel.module.css';
 
 function errorKey(code: string): string {
@@ -31,6 +32,7 @@ export function SyncPanel() {
   const showToast = useToasts((s) => s.show);
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [diagnostics, setDiagnostics] = useState(false);
 
   if (status.state === 'mismatch') {
     return (
@@ -100,6 +102,10 @@ export function SyncPanel() {
       <button type="button" className={styles.button} onClick={syncNow} disabled={status.state === 'syncing'}>
         {t('sync.now')}
       </button>
+      <button type="button" className={styles.link} onClick={() => setDiagnostics(true)}>
+        {t('diagnostics.open')}
+      </button>
+      <DiagnosticsSheet open={diagnostics} onClose={() => setDiagnostics(false)} />
     </div>
   );
 }

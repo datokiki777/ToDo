@@ -32,3 +32,49 @@ export function applyItemInput(
   next.splice(index + 1, 0, ...added);
   return { items: next, focusId: added.at(-1)?.id ?? null };
 }
+
+/** How many rows are ticked. */
+export function doneCount(items: ChecklistItem[]): number {
+  return items.filter((item) => item.done).length;
+}
+
+export interface RemovedRow {
+  item: ChecklistItem;
+  /** Where the row was, so it can be put back in the same place. */
+  index: number;
+}
+
+/** Takes the ticked rows out, remembering them (and their places) for "undo". */
+export function removeDone(items: ChecklistItem[]): { items: ChecklistItem[]; removed: RemovedRow[] } {
+  const removed: RemovedRow[] = [];
+  const kept: ChecklistItem[] = [];
+  items.forEach((item, index) => {
+    if (item.done) removed.push({ item, index });
+    else kept.push(item);
+  });
+  return { items: kept, removed };
+}
+
+/** Puts removed rows back where they were. Rows added in the meantime are kept. */
+export function reinsertRows(items: ChecklistItem[], removed: RemovedRow[]): ChecklistItem[] {
+  const next = [...items];
+  for (const { item, index } of [...removed].sort((a, b) => a.index - b.index)) {
+    if (next.some((existing) => existing.id === item.id)) continue;
+    next.splice(Math.min(index, next.length), 0, item);
+  }
+  return next;
+}
+
+/** Unticks every row, remembering which ones were ticked. */
+export function uncheckAll(items: ChecklistItem[]): { items: ChecklistItem[]; changedIds: string[] } {
+  return {
+    items: items.map((item) => (item.done ? { ...item, done: false } : item)),
+    changedIds: items.filter((item) => item.done).map((item) => item.id),
+  };
+}
+
+/** Ticks the given rows again ("undo" of unticking). */
+export function recheck(items: ChecklistItem[], ids: string[]): ChecklistItem[] {
+  const set = new Set(ids);
+  return items.map((item) => (set.has(item.id) ? { ...item, done: true } : item));
+}

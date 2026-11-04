@@ -81,3 +81,11 @@
 .danger:disabled {
   opacity: 0.5;
 }
+
+.link {
+  align-self: flex-start;
+  min-height: var(--tap);
+  padding: 0 4px;
+  color: var(--accent);
+  font-weight: 650;
+}
