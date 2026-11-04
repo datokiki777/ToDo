@@ -52,6 +52,12 @@ export default defineConfig({
           { src: 'pwa-512.png', sizes: '512x512', type: 'image/png' },
           { src: 'maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
+        // Android's share menu: "Share → ToDo" opens the app at "/?title=…&text=…&url=…" (see ShareReceiver).
+        share_target: {
+          action: '/',
+          method: 'GET',
+          params: { title: 'title', text: 'text', url: 'url' },
+        },
         // Long-press the app icon on Android: straight to a new note.
         shortcuts: [
           {

@@ -12,7 +12,7 @@
   flex: none;
   width: 22px;
   height: 22px;
-  margin: 13px 14px 0 2px;
+  margin: 13px 12px 0 2px;
   accent-color: var(--note-accent);
 }
 .text {
@@ -107,5 +107,39 @@
 @media (hover: hover) {
   .bulkButton:hover {
     background: color-mix(in srgb, var(--ink) 14%, transparent);
+  }
+}
+
+/* The grip on the left of a row: drag it to move the row, or press the up/down arrows on it. */
+.handle {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 48px;
+  margin-left: -6px;
+  color: var(--muted);
+  border-radius: 8px;
+  touch-action: none; /* the finger drags the row, it does not scroll the page */
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+.handle:focus-visible {
+  outline: 2px solid var(--accent);
+}
+.handle:active {
+  cursor: grabbing;
+}
+.lifted {
+  position: relative;
+  z-index: 4;
+  border-radius: 10px;
+  background: var(--note-bg);
+  box-shadow: 0 8px 22px rgb(0 0 0 / 0.28);
+}
+@media (prefers-reduced-motion: reduce) {
+  .row {
+    transition: none !important;
   }
 }

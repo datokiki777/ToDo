@@ -1,9 +1,19 @@
-import { Plus, X, RotateCcw, Trash2 } from 'lucide-react';
+import { Plus, X, RotateCcw, Trash2, GripVertical } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToasts } from '@/core/ui/toasts';
 import { newId } from '@/core/id';
-import { applyItemInput, doneCount, recheck, reinsertRows, removeDone, uncheckAll } from '../checklist';
+import {
+  applyItemInput,
+  doneCount,
+  dropIndex,
+  moveItem,
+  recheck,
+  reinsertRows,
+  removeDone,
+  slideOffset,
+  uncheckAll,
+} from '../checklist';
 import { linkLabel, linkTarget } from '../linkProps';
 import { rowLinks } from '../links';
 import { AutoTextarea } from './AutoTextarea';
@@ -16,6 +26,28 @@ interface Props {
   onChange: (items: ChecklistItem[]) => void;
   readOnly: boolean;
 }
+
+/** The nearest ancestor that scrolls (the page itself if none does). */
+function scrollParent(el: HTMLElement | null): HTMLElement {
+  for (let node = el?.parentElement ?? null; node; node = node.parentElement) {
+    const overflow = getComputedStyle(node).overflowY;
+    if ((overflow === 'auto' || overflow === 'scroll') && node.scrollHeight > node.clientHeight) return node;
+  }
+  return (document.scrollingElement as HTMLElement) ?? document.documentElement;
+}
+
+interface DragState {
+  id: string;
+  from: number;
+  /** How far the dragged row is from where it started (in page coordinates, scrolling included). */
+  dy: number;
+  /** Where it would land if let go now. */
+  target: number;
+  height: number;
+}
+
+const EDGE = 72; // px from the top/bottom of the scrolling area where dragging scrolls it
+const MAX_SPEED = 16; // px per frame
 
 export function ChecklistEditor({ items, onChange, readOnly }: Props) {
   const { t } = useTranslation();
@@ -57,6 +89,99 @@ export function ChecklistEditor({ items, onChange, readOnly }: Props) {
     });
   };
 
+  // ---- moving rows: drag the handle (touch or mouse), or press the arrow keys on it ----
+  const rowEls = useRef(new Map<string, HTMLDivElement>());
+  const [drag, setDrag] = useState<DragState | null>(null);
+  const session = useRef<{
+    pointerId: number;
+    from: number;
+    startY: number;
+    startScroll: number;
+    centers: number[];
+    height: number;
+    lastY: number;
+    scroller: HTMLElement;
+    frame: number;
+  } | null>(null);
+  const live = useRef({ items, onChange });
+  live.current = { items, onChange };
+
+  const measure = () => {
+    const d = session.current;
+    if (!d) return;
+    const dy = d.lastY - d.startY + (d.scroller.scrollTop - d.startScroll);
+    const draggedCenter = d.centers[d.from]! + dy;
+    const target = dropIndex(d.centers, d.from, draggedCenter);
+    const id = live.current.items[d.from]?.id;
+    if (id) setDrag({ id, from: d.from, dy, target, height: d.height });
+  };
+
+  const autoScroll = () => {
+    const d = session.current;
+    if (!d) return;
+    const area = d.scroller === document.scrollingElement ? { top: 0, bottom: window.innerHeight } : d.scroller.getBoundingClientRect();
+    const speed = d.lastY < area.top + EDGE ? -Math.min(MAX_SPEED, (area.top + EDGE - d.lastY) / 4) : d.lastY > area.bottom - EDGE ? Math.min(MAX_SPEED, (d.lastY - (area.bottom - EDGE)) / 4) : 0;
+    if (speed !== 0) {
+      d.scroller.scrollTop += speed;
+      measure();
+    }
+    d.frame = requestAnimationFrame(autoScroll);
+  };
+
+  const finish = (apply: boolean) => {
+    const d = session.current;
+    if (!d) return;
+    cancelAnimationFrame(d.frame);
+    session.current = null;
+    if (apply) {
+      const dy = d.lastY - d.startY + (d.scroller.scrollTop - d.startScroll);
+      const target = dropIndex(d.centers, d.from, d.centers[d.from]! + dy);
+      if (target !== d.from) live.current.onChange(moveItem(live.current.items, d.from, target));
+    }
+    setDrag(null);
+  };
+  useEffect(() => () => cancelAnimationFrame(session.current?.frame ?? 0), []);
+
+  const startDrag = (event: React.PointerEvent<HTMLButtonElement>, index: number, item: ChecklistItem) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    const scroller = scrollParent(rowEls.current.get(item.id) ?? null);
+    const start = scroller.scrollTop;
+    const centers = items.map((it) => {
+      const rect = rowEls.current.get(it.id)!.getBoundingClientRect();
+      return rect.top + rect.height / 2 + start; // page coordinates, so scrolling does not confuse them
+    });
+    // The centers above are relative to the scrolled content; the pointer is in screen coordinates.
+    // Both are compared through the scroll offset, which is added in `measure`.
+    event.currentTarget.setPointerCapture(event.pointerId);
+    session.current = {
+      pointerId: event.pointerId,
+      from: index,
+      startY: event.clientY,
+      startScroll: start,
+      centers,
+      height: rowEls.current.get(item.id)!.getBoundingClientRect().height,
+      lastY: event.clientY,
+      scroller,
+      frame: requestAnimationFrame(autoScroll),
+    };
+    navigator.vibrate?.(8);
+    setDrag({ id: item.id, from: index, dy: 0, target: index, height: session.current.height });
+  };
+
+  const moveDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const d = session.current;
+    if (!d || event.pointerId !== d.pointerId) return;
+    d.lastY = event.clientY;
+    measure();
+  };
+
+  const handleKeys = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const to = event.key === 'ArrowUp' ? index - 1 : event.key === 'ArrowDown' ? index + 1 : null;
+    if (to === null) return;
+    event.preventDefault();
+    if (to >= 0 && to < items.length) onChange(moveItem(items, index, to));
+  };
+
   const patch = (id: string, changes: Partial<ChecklistItem>) =>
     onChange(items.map((item) => (item.id === id ? { ...item, ...changes } : item)));
 
@@ -88,12 +213,44 @@ export function ChecklistEditor({ items, onChange, readOnly }: Props) {
     }
   };
 
+  const canMove = !readOnly && items.length > 1;
+  const rowStyle = (index: number): React.CSSProperties | undefined => {
+    if (!drag) return undefined;
+    if (index === drag.from) return { transform: `translateY(${drag.dy}px)`, transition: 'none' };
+    const slide = slideOffset(index, drag.from, drag.target, drag.height);
+    return { transform: slide ? `translateY(${slide}px)` : undefined, transition: 'transform 0.15s ease' };
+  };
+
   return (
     <div className={styles.list}>
       {items.map((item, index) => {
         const links = rowLinks(item.text);
         return (
-        <div key={item.id} className={styles.row}>
+        <div
+          key={item.id}
+          ref={(el) => {
+            if (el) rowEls.current.set(item.id, el);
+            else rowEls.current.delete(item.id);
+          }}
+          className={`${styles.row} ${drag?.id === item.id ? styles.lifted : ''}`}
+          data-dragging={drag?.id === item.id ? 'true' : undefined}
+          style={rowStyle(index)}
+        >
+          {canMove && (
+            <button
+              type="button"
+              className={styles.handle}
+              aria-label={t('checklist.move')}
+              title={t('checklist.move')}
+              onPointerDown={(event) => startDrag(event, index, item)}
+              onPointerMove={moveDrag}
+              onPointerUp={() => finish(true)}
+              onPointerCancel={() => finish(false)}
+              onKeyDown={(event) => handleKeys(event, index)}
+            >
+              <GripVertical size={18} aria-hidden="true" />
+            </button>
+          )}
           <input
             type="checkbox"
             className={styles.check}

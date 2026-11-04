@@ -300,7 +300,8 @@
     "clearedDone_one": "{{count}} item deleted",
     "clearedDone_other": "{{count}} items deleted",
     "untickedAll_one": "{{count}} item unticked",
-    "untickedAll_other": "{{count}} items unticked"
+    "untickedAll_other": "{{count}} items unticked",
+    "move": "Move: drag, or use the arrow keys"
   },
   "diagnostics": {
     "open": "Diagnostics",

@@ -19,7 +19,9 @@ const snapBucket = (uid) => { if (!snaps.has(uid)) snaps.set(uid, new Map()); re
 const body = (req) => new Promise((res) => { let s = ''; req.on('data', (d) => (s += d)); req.on('end', () => res(s ? JSON.parse(s) : {})); });
 const json = (res, data, code = 200) => { res.writeHead(code, { 'content-type': 'application/json', 'cache-control': 'no-store' }); res.end(JSON.stringify(data)); };
 
-http.createServer(async (req, res) => {
+// Long shared text arrives in the address (Georgian letters take 9 characters each). On a phone the
+// app's service worker answers such a request, so there is no server limit: do the same here.
+http.createServer({ maxHeaderSize: 2 * 1024 * 1024 }, async (req, res) => {
   const url = new URL(req.url ?? '/', 'http://x');
   const q = (k) => url.searchParams.get(k);
 

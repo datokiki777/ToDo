@@ -300,7 +300,8 @@
     "clearedDone_one": "წაიშალა {{count}} პუნქტი",
     "clearedDone_other": "წაიშალა {{count}} პუნქტი",
     "untickedAll_one": "მოიხსნა {{count}} მონიშვნა",
-    "untickedAll_other": "მოიხსნა {{count}} მონიშვნა"
+    "untickedAll_other": "მოიხსნა {{count}} მონიშვნა",
+    "move": "გადაადგილება: გადაათრიე ან გამოიყენე ისრები"
   },
   "diagnostics": {
     "open": "დიაგნოსტიკა",

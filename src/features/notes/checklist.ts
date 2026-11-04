@@ -78,3 +78,39 @@ export function recheck(items: ChecklistItem[], ids: string[]): ChecklistItem[] 
   const set = new Set(ids);
   return items.map((item) => (set.has(item.id) ? { ...item, done: true } : item));
 }
+
+/** A copy of the list with one row moved from `from` to `to` (both are clamped to the list). */
+export function moveItem<T>(items: T[], from: number, to: number): T[] {
+  if (items.length === 0) return items;
+  const a = Math.min(Math.max(from, 0), items.length - 1);
+  const b = Math.min(Math.max(to, 0), items.length - 1);
+  if (a === b) return items;
+  const next = [...items];
+  const [moved] = next.splice(a, 1);
+  next.splice(b, 0, moved as T);
+  return next;
+}
+
+/**
+ * Where a dragged row would land. `centers` are the middles of all rows in their original places
+ * (top to bottom); `draggedCenter` is where the middle of the dragged row is now. The row goes after
+ * every other row whose middle it has passed.
+ */
+export function dropIndex(centers: number[], from: number, draggedCenter: number): number {
+  let index = 0;
+  centers.forEach((center, i) => {
+    if (i !== from && center < draggedCenter) index += 1;
+  });
+  return index;
+}
+
+/**
+ * How far a row (not the dragged one) must slide to make room while another row is dragged: up by the
+ * dragged row's height if the dragged row passes it going down, down if it passes it going up.
+ */
+export function slideOffset(index: number, from: number, target: number, draggedHeight: number): number {
+  if (index === from) return 0;
+  if (from < target && index > from && index <= target) return -draggedHeight;
+  if (target < from && index >= target && index < from) return draggedHeight;
+  return 0;
+}

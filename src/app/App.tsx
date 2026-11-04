@@ -3,6 +3,7 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { requestPersistence } from '@/core/storage';
 import { ToastHost } from '@/core/ui/ToastHost';
 import { NoteEditorPage } from '@/features/notes/pages/NoteEditorPage';
+import { ShareReceiver } from './ShareReceiver';
 import { ShortcutLauncher } from './ShortcutLauncher';
 import { CalendarPage } from '@/features/calendar/CalendarPage';
 import { NotesPage } from '@/features/notes/pages/NotesPage';
@@ -44,6 +45,7 @@ export default function App() {
   return (
     <HashRouter>
       <ShortcutLauncher />
+      <ShareReceiver />
       <Routes>
         <Route element={<AppShell />}>
           <Route index element={<NotesPage key="active" mode="active" />} />
