@@ -20,6 +20,8 @@ export interface ChecklistItem {
   id: string;
   text: string;
   done: boolean;
+  /** The calendar day this row is for ("2026-11-03"), e.g. one row per day of a habit list. Most rows have none. */
+  date?: string | null;
 }
 
 /**
@@ -178,6 +180,7 @@ export function parseNote(raw: unknown): Note | null {
         id: typeof e.id === 'string' && e.id !== '' ? e.id : newId(),
         text: e.text,
         done: e.done === true,
+        ...(isDateKey(e.date) ? { date: e.date } : {}),
       });
     }
   }

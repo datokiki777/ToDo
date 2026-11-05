@@ -7,8 +7,7 @@ import {
   StickyNote,
   Trash2,
   Type,
-  X,
-} from 'lucide-react';
+  X, CalendarCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -20,6 +19,8 @@ import { PageHeader } from '@/core/ui/PageHeader';
 import { useToasts } from '@/core/ui/toasts';
 import { GroupSheet, type GroupValues } from '@/features/groups/components/GroupSheet';
 import { GroupStrip } from '@/features/groups/components/GroupStrip';
+import { HabitSheet, type HabitValues } from '../components/HabitSheet';
+import { dayLabel, habitRows } from '../habit';
 import { colorForNewNote } from '@/features/groups/defaults';
 import { useGroups } from '@/features/groups/hooks';
 import type { Group } from '@/features/groups/model';
@@ -83,6 +84,20 @@ export function NotesPage({ mode }: { mode: NotesView }) {
       color: colorForNewNote(activeColor, selectedGroup),
       groupId: activeGroupId,
     });
+    navigate(`/note/${note.id}`);
+  };
+
+  const [habitOpen, setHabitOpen] = useState(false);
+  const createHabit = async ({ title, plan }: HabitValues) => {
+    const months = t('calendar.months', { returnObjects: true }) as string[];
+    const weekdays = t('calendar.weekdays', { returnObjects: true }) as string[];
+    const note = await notesRepository.create({
+      kind: 'checklist',
+      color: colorForNewNote(activeColor, selectedGroup),
+      groupId: activeGroupId,
+    });
+    await notesRepository.update(note.id, { title, items: habitRows(plan, (day) => dayLabel(day, months, weekdays)) });
+    setHabitOpen(false);
     navigate(`/note/${note.id}`);
   };
 
@@ -219,6 +234,17 @@ export function NotesPage({ mode }: { mode: NotesView }) {
                 aria-label={t('common.close')}
                 onClick={() => setFabOpen(false)}
               />
+              <button
+                type="button"
+                className={styles.pill}
+                onClick={() => {
+                  setFabOpen(false);
+                  setHabitOpen(true);
+                }}
+              >
+                <CalendarCheck size={20} />
+                {t('habit.pill')}
+              </button>
               <button type="button" className={styles.pill} onClick={() => void create('checklist')}>
                 <ListChecks size={20} />
                 {t('list.newChecklist')}
@@ -273,6 +299,7 @@ export function NotesPage({ mode }: { mode: NotesView }) {
         onConfirm={() => void emptyTrash()}
         onCancel={() => setConfirmEmpty(false)}
       />
+      <HabitSheet open={habitOpen} onClose={() => setHabitOpen(false)} onCreate={(values) => void createHabit(values)} />
     </>
   );
 }

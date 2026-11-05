@@ -146,3 +146,16 @@ describe('decideGroup', () => {
     expect(decideGroup(group(), { kind: 'doc', group: group() })).toEqual({ action: 'noop', base: 100 });
   });
 });
+
+describe('a row\'s day counts as a change', () => {
+  it('moving a row to another day is seen as an edit', () => {
+    const a = note({ items: [{ id: '1', text: 'x', done: false, date: '2026-11-03' }] });
+    const b = note({ items: [{ id: '1', text: 'x', done: false, date: '2026-11-04' }] });
+    expect(textDiffers(a, b)).toBe(true);
+  });
+  it('a row without a day and one with the day null are the same', () => {
+    const a = note({ items: [{ id: '1', text: 'x', done: false }] });
+    const b = note({ items: [{ id: '1', text: 'x', done: false, date: null }] });
+    expect(textDiffers(a, b)).toBe(false);
+  });
+});

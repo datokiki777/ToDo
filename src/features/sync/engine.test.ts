@@ -222,6 +222,33 @@ describe('keeping devices in step', () => {
     expect(cloud.get(UID, 'notes', id)).toBeDefined();
   });
 
+  it('a daily list keeps its days on the other device, and a tick made there comes back', async () => {
+    const a = device('a');
+    const b = device('b');
+    const id = await write(a, { title: 'წამალი', body: '' });
+    await a.notes.update(id, {
+      kind: 'checklist',
+      items: [
+        { id: 'd1', text: 'ორშ, 2 ნოემბერი', done: true, date: '2026-11-02' },
+        { id: 'd2', text: 'სამ, 3 ნოემბერი', done: false, date: '2026-11-03' },
+      ],
+    });
+    await a.engine.start();
+    await b.engine.start();
+    await settle(a, b);
+    expect((await b.notes.get(id))?.items).toEqual([
+      { id: 'd1', text: 'ორშ, 2 ნოემბერი', done: true, date: '2026-11-02' },
+      { id: 'd2', text: 'სამ, 3 ნოემბერი', done: false, date: '2026-11-03' },
+    ]);
+
+    const items = (await b.notes.get(id))!.items.map((i) => (i.id === 'd2' ? { ...i, done: true } : i));
+    await b.notes.update(id, { items });
+    await settle(a, b);
+    expect((await a.notes.get(id))?.items.map((i) => i.done)).toEqual([true, true]);
+    expect(a.engine.getStatus().failed).toBe(0);
+    expect(b.engine.getStatus().failed).toBe(0);
+  });
+
   it('trash and restore travel too', async () => {
     const a = device('a');
     const b = device('b');

@@ -2,6 +2,7 @@ import { Plus, X, RotateCcw, Trash2, GripVertical } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToasts } from '@/core/ui/toasts';
+import { useToday } from '@/core/useToday';
 import { newId } from '@/core/id';
 import {
   applyItemInput,
@@ -88,6 +89,15 @@ export function ChecklistEditor({ items, onChange, readOnly }: Props) {
       onAction: () => latest.current.onChange(recheck(latest.current.items, changedIds)),
     });
   };
+
+  // A daily list: today's row is marked, and the note opens scrolled to it.
+  const today = useToday();
+  useEffect(() => {
+    const row = latest.current.items.find((item) => item.date === today);
+    if (row) rowEls.current.get(row.id)?.scrollIntoView({ block: 'center' });
+    // only when the note is opened, not whenever the day changes under it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ---- moving rows: drag the handle (touch or mouse), or press the arrow keys on it ----
   const rowEls = useRef(new Map<string, HTMLDivElement>());
@@ -232,7 +242,8 @@ export function ChecklistEditor({ items, onChange, readOnly }: Props) {
             if (el) rowEls.current.set(item.id, el);
             else rowEls.current.delete(item.id);
           }}
-          className={`${styles.row} ${drag?.id === item.id ? styles.lifted : ''}`}
+          className={`${styles.row} ${drag?.id === item.id ? styles.lifted : ''} ${item.date && item.date === today ? styles.today : ''}`}
+          data-today={item.date && item.date === today ? 'true' : undefined}
           data-dragging={drag?.id === item.id ? 'true' : undefined}
           style={rowStyle(index)}
         >

@@ -13,7 +13,7 @@ import {
   type Note,
   type NoteContent,
 } from './model';
-import { noteToCloud } from '@/features/sync/cloud';
+import { findUndefined, noteToCloud } from '@/features/sync/cloud';
 import { countNotes, selectNotes } from './selectors';
 
 function note(partial: Partial<Note> = {}): Note {
@@ -340,5 +340,19 @@ describe('sorting: last changed, date created, colour', () => {
     const red2 = note({ id: 'r2', body: 'x', color: 'red', updatedAt: 5 });
     const yellow = note({ id: 'y1', body: 'x', color: 'yellow', updatedAt: 3 });
     expect(ids('color', [red1, red2, yellow])).toEqual(['y1', 'r2', 'r1']);
+  });
+});
+
+describe('a checklist row\'s day in the cloud format', () => {
+  it('goes up as the day, or as null for a row without one (the cloud refuses "undefined")', () => {
+    const n = note({ items: [{ id: 'a', text: 'dated', done: false, date: '2026-11-03' }, { id: 'b', text: 'plain', done: true }] });
+    const doc = noteToCloud(n) as { items: Array<Record<string, unknown>> };
+    expect(doc.items.map((i) => i.date)).toEqual(['2026-11-03', null]);
+    expect(findUndefined(doc)).toBeNull();
+  });
+
+  it('and comes back unchanged', () => {
+    const n = note({ updatedAt: 5, items: [{ id: 'a', text: 'dated', done: true, date: '2026-11-03' }] });
+    expect(parseNote({ ...noteToCloud(n), id: n.id })).toEqual(n);
   });
 });

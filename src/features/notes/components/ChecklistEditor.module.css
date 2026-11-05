@@ -143,3 +143,10 @@
     transition: none !important;
   }
 }
+
+/* Today's row on a daily list. */
+.today {
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--note-accent) 24%, transparent);
+  box-shadow: inset 4px 0 0 var(--note-accent);
+}

@@ -336,5 +336,28 @@
     "copy": "Copy report",
     "copied": "Report copied",
     "copyFailed": "Could not copy"
+  },
+  "habit": {
+    "pill": "Daily list",
+    "title": "Daily list",
+    "name": "What do you do every day?",
+    "namePlaceholder": "e.g. Take medicine",
+    "suggestions": [
+      "Take medicine",
+      "Study",
+      "Exercise",
+      "Drink water"
+    ],
+    "days": "How many days",
+    "daysOther": "Other number of days",
+    "start": "First day",
+    "skip": "Days to skip",
+    "skipWeekend": "Skip weekends",
+    "includeWeekend": "Include weekends",
+    "summary": "{{rows}} rows: {{first}} – {{last}}",
+    "noRows": "Every day is skipped",
+    "create": "Create the list",
+    "tickToday": "Tick today",
+    "untickToday": "Untick today"
   }
 }

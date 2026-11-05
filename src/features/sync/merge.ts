@@ -21,7 +21,7 @@ function textOf(note: Pick<Note, 'title' | 'body' | 'items'>): string {
   return JSON.stringify([
     note.title.trim(),
     note.body.trim(),
-    note.items.map((item) => [item.text.trim(), item.done]),
+    note.items.map((item) => [item.text.trim(), item.done, item.date ?? null]),
   ]);
 }
 

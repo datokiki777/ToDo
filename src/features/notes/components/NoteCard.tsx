@@ -1,12 +1,15 @@
-import { CalendarDays, Link2, Pin } from 'lucide-react';
+import { CalendarDays, Check, Link2, Pin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { formatDayShort, formatShortDate } from '@/core/time';
+import { useToday } from '@/core/useToday';
 import { useSettings, type ViewMode } from '@/core/settings/store';
 import { GroupIcon } from '@/features/groups/icons';
 import type { Group } from '@/features/groups/model';
+import { dayDone, habitLine, isHabitNote, rowsOf, toggleDay } from '../habit';
 import { linkLabel, linkTarget } from '../linkProps';
 import { asOnlyLink, noteLinks } from '../links';
+import { notesRepository } from '../repository';
 import { checklistProgress, displayTitle, hasChecklist, previewLines, type Note } from '../model';
 import { LinkIcon } from './LinkIcon';
 import styles from './NoteCard.module.css';
@@ -27,10 +30,23 @@ export function NoteCard({ note, view, group, daysLeft, showDate = 'updated' }: 
   // Titles only, if chosen. Not in the trash, where the first line helps to tell notes apart.
   const compact = useSettings((s) => s.compactCards) && daysLeft === undefined;
   const rawTitle = displayTitle(note);
-  const preview = previewLines(note, 4).map((line) => asOnlyLink(line)?.short ?? line);
+  // A daily list: today's row can be ticked right here, with one tap, without opening the note.
+  const today = useToday();
+  const habit = isHabitNote(note) && note.deletedAt === null;
+  const habitToday = habit && rowsOf(note.items, today).length > 0;
+  const todayDone = habitToday && dayDone(note.items, today);
+  const tickToday = () => {
+    const next = toggleDay(note.items, today);
+    if (!next) return;
+    navigator.vibrate?.(10);
+    void notesRepository.update(note.id, { items: next });
+  };
+
+  const todayLine = habit ? habitLine(note.items, today) : null;
+  const preview = (todayLine ? [todayLine] : previewLines(note, 4)).map((line) => asOnlyLink(line)?.short ?? line);
   const progress = hasChecklist(note) ? checklistProgress(note) : null;
   const links = noteLinks(note);
-  const single = links.length === 1 ? links[0]! : null;
+  const single = !habitToday && links.length === 1 ? links[0]! : null;
 
   // A note that is just an address gets the site name as its title instead of a long URL.
   let title = rawTitle;
@@ -41,7 +57,7 @@ export function NoteCard({ note, view, group, daysLeft, showDate = 'updated' }: 
   }
 
   return (
-    <div className={`${styles.wrap} ${single ? styles.hasOpen : ''} ${compact ? styles.compact : ''}`} data-color={note.color}>
+    <div className={`${styles.wrap} ${single || habitToday ? styles.hasOpen : ''} ${compact ? styles.compact : ''}`} data-color={note.color}>
     <Link to={`/note/${note.id}`} className={styles.card} data-view={view}>
       <div className={styles.head}>
         <span className={styles.title}>{title || t('list.untitled')}</span>
@@ -87,6 +103,18 @@ export function NoteCard({ note, view, group, daysLeft, showDate = 'updated' }: 
         )}
       </div>
     </Link>
+    {habitToday && (
+      <button
+        type="button"
+        className={`${styles.habit} ${todayDone ? styles.habitDone : ''}`}
+        aria-pressed={todayDone}
+        aria-label={todayDone ? t('habit.untickToday') : t('habit.tickToday')}
+        title={todayDone ? t('habit.untickToday') : t('habit.tickToday')}
+        onClick={tickToday}
+      >
+        <Check size={22} strokeWidth={3} aria-hidden="true" />
+      </button>
+    )}
     {single && (
       <a
         className={styles.open}

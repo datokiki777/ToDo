@@ -64,7 +64,7 @@ export function noteToCloud(note: Note): Record<string, unknown> {
     kind: note.kind,
     title: note.title,
     body: note.body,
-    items: note.items.map((item) => ({ id: item.id, text: item.text, done: item.done === true })),
+    items: note.items.map((item) => ({ id: item.id, text: item.text, done: item.done === true, date: item.date ?? null })),
     color: note.color,
     groupId: note.groupId ?? null,
     date: note.date ?? null,

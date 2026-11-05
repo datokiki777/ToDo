@@ -1,0 +1,83 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.label {
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.input {
+  min-height: 52px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 1.0625rem;
+  outline: none;
+}
+.input:focus {
+  border-color: var(--accent);
+}
+.number {
+  width: 96px;
+  text-align: center;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.chip {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--bg);
+  font-weight: 650;
+}
+.on {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.day {
+  min-width: 52px;
+  padding: 0 10px;
+}
+.skipped {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  color: var(--danger);
+  text-decoration: line-through;
+}
+.link {
+  align-self: flex-start;
+  min-height: 40px;
+  padding: 0 4px;
+  color: var(--accent);
+  font-weight: 650;
+}
+.summary {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  font-weight: 600;
+  line-height: 1.4;
+}
+.create {
+  min-height: 52px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+.create:disabled {
+  opacity: 0.45;
+}
