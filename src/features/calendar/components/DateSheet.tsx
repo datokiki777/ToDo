@@ -9,10 +9,12 @@ interface Props {
   value: string | null;
   onChange: (date: string | null) => void;
   onClose: () => void;
+  /** A daily list has days of its own on every row, so this date is not needed for it. */
+  daily?: boolean;
 }
 
 /** Choose the calendar day for a note: a quick pick, any day, or none. */
-export function DateSheet({ open, value, onChange, onClose }: Props) {
+export function DateSheet({ open, value, onChange, onClose, daily = false }: Props) {
   const { t } = useTranslation();
   const today = dateKey(Date.now());
   const choose = (date: string | null) => {
@@ -27,6 +29,8 @@ export function DateSheet({ open, value, onChange, onClose }: Props) {
 
   return (
     <Sheet open={open} title={t('editor.dateTitle')} onClose={onClose}>
+      <p className={styles.help}>{t('editor.dateHelp')}</p>
+      {daily && <p className={styles.helpDaily}>{t('editor.dateHelpDaily')}</p>}
       <div className={styles.quick}>
         {quick.map((q) => (
           <button
@@ -42,12 +46,15 @@ export function DateSheet({ open, value, onChange, onClose }: Props) {
 
       <label className={styles.field}>
         <span className={styles.label}>{t('editor.datePick')}</span>
+        <span className={styles.pick}>
+          {value === null && <span className={styles.placeholder}>{t('editor.datePickHint')}</span>}
         <input
-          className={styles.input}
-          type="date"
-          value={value ?? ''}
-          onChange={(event) => event.target.value && choose(event.target.value)}
-        />
+            className={`${styles.input} ${value === null ? styles.empty : ''}`}
+            type="date"
+            value={value ?? ''}
+            onChange={(event) => event.target.value && choose(event.target.value)}
+          />
+        </span>
       </label>
 
       {value !== null && (

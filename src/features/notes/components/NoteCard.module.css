@@ -91,22 +91,30 @@
 }
 .hasOpen .head,
 .hasOpen .preview {
-  padding-right: 44px;
+  padding-right: 40px;
 }
 .open {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 7px;
+  right: 8px;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--note-accent) 30%, transparent);
+  width: 40px; /* the tap area; the round button drawn inside it is smaller */
+  height: 40px;
   color: var(--ink);
 }
-.open:active {
+.open::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--note-accent) 30%, transparent);
+}
+.open:active::before {
   background: color-mix(in srgb, var(--note-accent) 50%, transparent);
+}
+.open > svg {
+  position: relative;
 }
 .linkCount {
   display: inline-flex;
@@ -121,40 +129,44 @@
 }
 .compact .open {
   top: 4px;
-  right: 6px;
-  width: 40px;
-  height: 40px;
 }
 
-/* The round tick for today on a daily list: empty ring, filled when today is done. */
+/* The round tick for today on a daily list: an empty ring, filled when today is done. */
 .habit {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 7px;
+  right: 8px;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 2.5px solid var(--note-accent);
-  border-radius: 50%;
+  width: 40px; /* the tap area; the ring drawn inside it is smaller */
+  height: 40px;
   color: transparent;
-  transition: background 0.15s ease, color 0.15s ease;
+}
+.habit::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 2px solid var(--note-accent);
+  border-radius: 50%;
+  transition: background 0.15s ease;
 }
 .habitDone {
-  background: var(--note-accent);
   color: #fff;
+}
+.habitDone::before {
+  background: var(--note-accent);
+}
+.habit > svg {
+  position: relative;
 }
 .habit:active {
   transform: scale(0.94);
 }
 .compact .habit {
   top: 4px;
-  right: 6px;
-  width: 40px;
-  height: 40px;
 }
 @media (prefers-reduced-motion: reduce) {
-  .habit {
+  .habit::before {
     transition: none;
   }
 }

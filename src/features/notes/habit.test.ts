@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dayDone, dayLabel, habitDates, habitLine, habitRows, isHabitNote, MAX_HABIT_DAYS, rowsOf, toggleDay } from './habit';
+import { dayDone, dayLabel, extendHabit, habitDates, habitLine, habitRows, inferSkip, isHabitNote, MAX_HABIT_DAYS, MAX_ROWS, rowsOf, toggleDay } from './habit';
 import { parseNote, type ChecklistItem } from './model';
 
 const MON = '2026-11-02'; // a Monday
@@ -115,5 +115,79 @@ describe('the label of a daily row', () => {
     expect(dayLabel('2026-11-03', months, weekdays)).toBe('Tue, 3 Nov');
     expect(dayLabel('2026-11-08', months, weekdays)).toBe('Sun, 8 Nov');
     expect(dayLabel('2027-01-01', months, weekdays)).toBe('Fri, 1 Jan');
+  });
+});
+
+describe('adding more days to a daily list', () => {
+  const label = (d: string) => `L ${d}`;
+  const make = (start: string, days: number, skip: number[]) => habitRows({ start, days, skip }, label);
+
+  it('continues the day after the last row, for 30 days', () => {
+    const list = make('2026-11-02', 7, []); // Mon 2 – Sun 8 Nov
+    const { items, added } = extendHabit(list, '2026-11-03', 30, label);
+    expect(added).toHaveLength(30);
+    expect(added[0]!.date).toBe('2026-11-09');
+    expect(added.at(-1)!.date).toBe('2026-12-08');
+    expect(items).toHaveLength(37);
+    expect(added[0]!.text).toBe('L 2026-11-09');
+    expect(added.every((r) => !r.done)).toBe(true);
+  });
+
+  it('keeps leaving out the weekdays the list left out', () => {
+    const list = make('2026-11-02', 14, [0, 6]); // two weeks without weekends
+    expect(inferSkip(list)).toEqual([0, 6]);
+    const { added } = extendHabit(list, '2026-11-03', 14, label);
+    expect(added).toHaveLength(10);
+    expect(added.map((r) => new Date(`${r.date}T12:00:00`).getDay()).every((w) => w !== 0 && w !== 6)).toBe(true);
+  });
+
+  it('a list shorter than a week does not guess: nothing is left out', () => {
+    const list = make('2026-11-02', 5, []);
+    expect(inferSkip(list)).toEqual([]);
+    expect(extendHabit(list, '2026-11-03', 7, label).added).toHaveLength(7);
+  });
+
+  it('a list that ended long ago continues from today, not from the past', () => {
+    const list = make('2026-09-01', 7, []); // ended 7 Sep
+    const { added } = extendHabit(list, '2026-11-03', 3, label);
+    expect(added.map((r) => r.date)).toEqual(['2026-11-03', '2026-11-04', '2026-11-05']);
+  });
+
+  it('a list that has not ended yet continues right after its last day', () => {
+    const list = make('2026-11-02', 30, []); // until 1 Dec
+    const { added } = extendHabit(list, '2026-11-03', 2, label);
+    expect(added.map((r) => r.date)).toEqual(['2026-12-02', '2026-12-03']);
+  });
+
+  it('puts the new rows right after the last daily row, before anything written below', () => {
+    const plain: ChecklistItem = { id: 'p', text: 'a note to self', done: false };
+    const list = [...make('2026-11-02', 2, []), plain];
+    const { items } = extendHabit(list, '2026-11-02', 2, label);
+    expect(items.map((r) => r.date ?? 'plain')).toEqual(['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', 'plain']);
+  });
+
+  it('keeps ticks and the rows already there, and gives every new row its own id', () => {
+    const list = make('2026-11-02', 3, []).map((r, i) => ({ ...r, done: i === 0 }));
+    const { items, added } = extendHabit(list, '2026-11-02', 4, label);
+    expect(items.slice(0, 3)).toEqual(list);
+    expect(new Set(items.map((r) => r.id)).size).toBe(items.length);
+    expect(added).toHaveLength(4);
+  });
+
+  it('does nothing for a note with no daily rows', () => {
+    const plain: ChecklistItem[] = [{ id: 'a', text: 'x', done: false }];
+    expect(extendHabit(plain, '2026-11-03', 30, label)).toEqual({ items: plain, added: [] });
+    expect(extendHabit([], '2026-11-03', 30, label).added).toEqual([]);
+  });
+
+  it('never grows a list past the limit', () => {
+    const big = make('2026-01-01', 366, []).concat(make('2027-01-01', 366, [])).concat(make('2028-01-01', 250, []));
+    expect(big.length).toBeGreaterThan(MAX_ROWS - 30);
+    const { items, added } = extendHabit(big, '2026-01-02', 30, label);
+    expect(items.length).toBeLessThanOrEqual(MAX_ROWS);
+    expect(added.length).toBeLessThanOrEqual(30);
+    const full = make('2026-01-01', 366, []).concat(make('2027-01-01', 366, [])).concat(make('2028-01-01', 268, []));
+    expect(full).toHaveLength(MAX_ROWS);
+    expect(extendHabit(full, '2026-01-02', 30, label).added).toEqual([]);
   });
 });

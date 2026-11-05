@@ -32,6 +32,7 @@ import { LinkList } from '../components/LinkList';
 import { textLinks } from '../links';
 import { ColorPicker } from '../components/ColorPicker';
 import { useNote } from '../hooks';
+import { isHabitNote } from '../habit';
 import {
   checklistToText,
   hasChecklist,
@@ -373,7 +374,13 @@ function Editor({ note }: { note: Note }) {
         <ColorPicker value={note.color} onChange={setColor} disabled={trashed} />
       </footer>
 
-      <DateSheet open={sheet === 'date'} value={note.date} onChange={setDate} onClose={() => setSheet(null)} />
+      <DateSheet
+        open={sheet === 'date'}
+        value={note.date}
+        onChange={setDate}
+        onClose={() => setSheet(null)}
+        daily={isHabitNote(note)}
+      />
       <GroupPickerSheet
         open={sheet === 'pick'}
         groups={groups ?? []}

@@ -234,6 +234,14 @@ export function NotesPage({ mode }: { mode: NotesView }) {
                 aria-label={t('common.close')}
                 onClick={() => setFabOpen(false)}
               />
+              <button type="button" className={styles.pill} onClick={() => void create('checklist')}>
+                <ListChecks size={20} />
+                {t('list.newChecklist')}
+              </button>
+              <button type="button" className={styles.pill} onClick={() => void create('text')}>
+                <Type size={20} />
+                {t('list.newText')}
+              </button>
               <button
                 type="button"
                 className={styles.pill}
@@ -244,14 +252,6 @@ export function NotesPage({ mode }: { mode: NotesView }) {
               >
                 <CalendarCheck size={20} />
                 {t('habit.pill')}
-              </button>
-              <button type="button" className={styles.pill} onClick={() => void create('checklist')}>
-                <ListChecks size={20} />
-                {t('list.newChecklist')}
-              </button>
-              <button type="button" className={styles.pill} onClick={() => void create('text')}>
-                <Type size={20} />
-                {t('list.newText')}
               </button>
             </>
           )}

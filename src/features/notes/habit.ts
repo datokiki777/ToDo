@@ -67,3 +67,50 @@ export function dayLabel(key: string, months: string[], weekdays: string[]): str
   const d = parseDateKey(key);
   return `${weekdays[(d.getDay() + 6) % 7] ?? ''}, ${d.getDate()} ${months[d.getMonth()] ?? ''}`;
 }
+
+/** How many days "add more" adds. */
+export const HABIT_EXTENSION_DAYS = 30;
+/** A list is never grown past this many rows (a year or two of days). */
+export const MAX_ROWS = 1000;
+
+const daysBetween = (from: string, to: string) =>
+  Math.round((parseDateKey(to).getTime() - parseDateKey(from).getTime()) / 86_400_000);
+
+/**
+ * The weekdays a list leaves out, judged from its rows (0 = Sunday … 6 = Saturday). Only a list that
+ * spans at least a week can tell: a shorter one is taken to leave out nothing.
+ */
+export function inferSkip(items: ChecklistItem[]): number[] {
+  const dates = items.map((item) => item.date).filter((d): d is string => Boolean(d)).sort();
+  if (dates.length === 0 || daysBetween(dates[0]!, dates.at(-1)!) < 6) return [];
+  const present = new Set(dates.map((d) => parseDateKey(d).getDay()));
+  return [0, 1, 2, 3, 4, 5, 6].filter((weekday) => !present.has(weekday));
+}
+
+/**
+ * Adds more days to a daily list: the days after its last row (or from today, if the list ended
+ * before today), leaving out the same weekdays as before. The new rows go right after the last
+ * daily row. Returns the new list and the rows that were added.
+ */
+export function extendHabit(
+  items: ChecklistItem[],
+  today: string,
+  days: number,
+  label: (day: string) => string,
+): { items: ChecklistItem[]; added: ChecklistItem[] } {
+  let lastDate = '';
+  let lastIndex = -1;
+  items.forEach((item, index) => {
+    if (!item.date) return;
+    lastIndex = index;
+    if (item.date > lastDate) lastDate = item.date;
+  });
+  if (lastIndex < 0) return { items, added: [] };
+
+  const next = addDays(lastDate, 1);
+  const start = next < today ? today : next; // a list that ended long ago continues from today
+  const room = Math.max(MAX_ROWS - items.length, 0);
+  const added = habitRows({ start, days, skip: inferSkip(items) }, label).slice(0, room);
+  if (added.length === 0) return { items, added: [] };
+  return { items: [...items.slice(0, lastIndex + 1), ...added, ...items.slice(lastIndex + 1)], added };
+}

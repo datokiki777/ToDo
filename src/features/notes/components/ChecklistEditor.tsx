@@ -1,8 +1,9 @@
-import { Plus, X, RotateCcw, Trash2, GripVertical } from 'lucide-react';
+import { Plus, X, RotateCcw, Trash2, GripVertical, CalendarPlus } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToasts } from '@/core/ui/toasts';
 import { useToday } from '@/core/useToday';
+import { dayLabel, extendHabit, HABIT_EXTENSION_DAYS, isHabitNote, MAX_ROWS } from '../habit';
 import { newId } from '@/core/id';
 import {
   applyItemInput,
@@ -66,6 +67,23 @@ export function ChecklistEditor({ items, onChange, readOnly }: Props) {
   latest.current = { items, onChange };
   const show = useToasts((state) => state.show);
   const ticked = doneCount(items);
+
+  // A daily list can be grown: 30 more days after its last one, with an undo.
+  const extendable = !readOnly && isHabitNote({ items });
+  const extend = () => {
+    const months = t('calendar.months', { returnObjects: true }) as string[];
+    const weekdays = t('calendar.weekdays', { returnObjects: true }) as string[];
+    const { items: grown, added } = extendHabit(items, today, HABIT_EXTENSION_DAYS, (day) => dayLabel(day, months, weekdays));
+    if (added.length === 0) return;
+    onChange(grown);
+    show(t('habit.extended', { count: added.length }), {
+      actionLabel: t('common.undo'),
+      onAction: () => {
+        const ids = new Set(added.map((row) => row.id));
+        latest.current.onChange(latest.current.items.filter((row) => !ids.has(row.id)));
+      },
+    });
+  };
 
   const clearTicked = () => {
     const { items: kept, removed } = removeDone(items);
@@ -318,6 +336,14 @@ export function ChecklistEditor({ items, onChange, readOnly }: Props) {
           <Plus size={20} />
           {t('editor.addItem')}
         </button>
+      )}
+      {extendable && (
+        <div className={styles.bulk}>
+          <button type="button" className={styles.bulkButton} disabled={items.length >= MAX_ROWS} onClick={extend}>
+            <CalendarPlus size={16} aria-hidden="true" />
+            {t('habit.extend', { days: HABIT_EXTENSION_DAYS })}
+          </button>
+        </div>
       )}
       {!readOnly && ticked > 0 && (
         <div className={styles.bulk}>

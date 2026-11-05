@@ -93,7 +93,10 @@
     "dateTomorrow": "Tomorrow",
     "dateNextWeek": "In a week",
     "datePick": "Another day",
-    "dateClear": "Remove the date"
+    "dateClear": "Remove the date",
+    "dateHelp": "Attach the note to a day: it shows on that day in the calendar (as a dot in the note's colour) and the card shows the date. It does not remind you of anything or change the note.",
+    "dateHelpDaily": "This is a daily list: every row already has its own day, so this date is not needed.",
+    "datePickHint": "Tap to choose a day"
   },
   "settings": {
     "title": "Settings",
@@ -358,6 +361,9 @@
     "noRows": "Every day is skipped",
     "create": "Create the list",
     "tickToday": "Tick today",
-    "untickToday": "Untick today"
+    "untickToday": "Untick today",
+    "extend": "Add {{days}} more days",
+    "extended_one": "{{count}} row added",
+    "extended_other": "{{count}} rows added"
   }
 }

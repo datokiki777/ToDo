@@ -112,7 +112,7 @@ export function NoteCard({ note, view, group, daysLeft, showDate = 'updated' }: 
         title={todayDone ? t('habit.untickToday') : t('habit.tickToday')}
         onClick={tickToday}
       >
-        <Check size={22} strokeWidth={3} aria-hidden="true" />
+        <Check size={17} strokeWidth={3} aria-hidden="true" />
       </button>
     )}
     {single && (
@@ -123,7 +123,7 @@ export function NoteCard({ note, view, group, daysLeft, showDate = 'updated' }: 
         aria-label={linkLabel(t, single)}
         title={linkLabel(t, single)}
       >
-        <LinkIcon kind={single.kind} size={21} />
+        <LinkIcon kind={single.kind} size={17} />
       </a>
     )}
     </div>

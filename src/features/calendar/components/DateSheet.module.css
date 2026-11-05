@@ -45,3 +45,39 @@
   color: var(--danger);
   font-weight: 650;
 }
+
+.help {
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+.helpDaily {
+  margin: -4px 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+.pick {
+  position: relative;
+  display: block;
+}
+.pick .input {
+  width: 100%;
+}
+.placeholder {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  z-index: 1;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 1.0625rem;
+  pointer-events: none;
+}
+/* While no day is chosen, hide the browser's own "dd/mm/yyyy" so only our hint shows. */
+.empty::-webkit-datetime-edit {
+  color: transparent;
+}
