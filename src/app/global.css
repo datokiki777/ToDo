@@ -9,6 +9,12 @@ html {
   text-size-adjust: 100%;
 }
 
+/* No pull-to-refresh, but the normal stretch / glow at the end of a scroll stays (`contain`, not `none`). */
+html,
+body {
+  overscroll-behavior-y: contain;
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -17,7 +23,6 @@ body {
   font-size: 16px;
   line-height: 1.5;
   -webkit-tap-highlight-color: transparent;
-  overscroll-behavior-y: none;
 }
 
 h1,

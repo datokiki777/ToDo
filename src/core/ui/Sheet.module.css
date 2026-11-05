@@ -11,6 +11,7 @@
   background: var(--surface);
   color: var(--ink);
   overflow: auto;
+  overscroll-behavior-y: contain;
 }
 .sheet::backdrop {
   background: rgb(0 0 0 / 0.5);
