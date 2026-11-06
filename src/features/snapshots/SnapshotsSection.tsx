@@ -16,7 +16,7 @@ import {
   takeSnapshotNow,
   useSnapshots,
 } from './controller';
-import { SNAPSHOT_KEEP, SnapshotError, type SnapshotMeta } from './model';
+import { BEFORE_RESTORE_KEEP, SNAPSHOT_KEEP, SnapshotError, type SnapshotMeta } from './model';
 import { displayTitle, isNoteEmpty, type Note } from '@/features/notes/model';
 import { previewRestore, restoreAsCopy, type RestorePreview } from './restore';
 import styles from './SnapshotsSection.module.css';
@@ -46,12 +46,20 @@ export function SnapshotsSection() {
   const [busy, setBusy] = useState(false);
   const [inBackup, setInBackup] = useState<Note[]>([]);
   const [showNotes, setShowNotes] = useState(false);
+  const [showSafety, setShowSafety] = useState(false);
   const navigate = useNavigate();
 
   const label = (meta: SnapshotMeta) =>
     meta.kind === 'before-restore'
       ? t('snapshots.beforeRestore', { time: formatShortDate(meta.takenAt, i18n.language) })
       : formatDay(meta.date, i18n.language);
+
+  const row = (meta: SnapshotMeta) => (
+    <button type="button" className={styles.row} onClick={() => void show(meta)}>
+      <span className={styles.date}>{label(meta)}</span>
+      <span className={styles.counts}>{t('snapshots.counts', { notes: meta.noteCount, groups: meta.groupCount })}</span>
+    </button>
+  );
 
   const refresh = async () => {
     setLoading(true);
@@ -170,18 +178,39 @@ export function SnapshotsSection() {
       {items && items.length === 0 && !loading && <p className={styles.hint}>{t('snapshots.empty')}</p>}
 
       {items && items.length > 0 && (
-        <ul className={styles.list}>
-          {items.map((meta) => (
-            <li key={meta.id}>
-              <button type="button" className={styles.row} onClick={() => void show(meta)}>
-                <span className={styles.date}>{label(meta)}</span>
-                <span className={styles.counts}>
-                  {t('snapshots.counts', { notes: meta.noteCount, groups: meta.groupCount })}
-                </span>
+        <>
+          <ul className={styles.list}>
+            {items
+              .filter((meta) => meta.kind === 'day')
+              .map((meta) => (
+                <li key={meta.id}>{row(meta)}</li>
+              ))}
+          </ul>
+          {items.some((meta) => meta.kind === 'before-restore') && (
+            <div className={styles.safety}>
+              <button
+                type="button"
+                className={styles.safetyToggle}
+                aria-expanded={showSafety}
+                onClick={() => setShowSafety((v) => !v)}
+              >
+                {t('snapshots.beforeGroup', { count: items.filter((meta) => meta.kind === 'before-restore').length })}
               </button>
-            </li>
-          ))}
-        </ul>
+              {showSafety && (
+                <>
+                  <p className={styles.hint}>{t('snapshots.beforeGroupHint', { keep: BEFORE_RESTORE_KEEP })}</p>
+                  <ul className={styles.list}>
+                    {items
+                      .filter((meta) => meta.kind === 'before-restore')
+                      .map((meta) => (
+                        <li key={meta.id}>{row(meta)}</li>
+                      ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       <Sheet open={open !== null} title={open ? label(open) : ''} onClose={() => !busy && setOpen(null)}>

@@ -9,6 +9,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { firebaseConfig } from '@/core/firebase/config';
+import { withoutUndefined } from '@/features/sync/cloud';
 import type { SnapshotKind, SnapshotMeta } from './model';
 import type { SnapshotStore } from './store';
 
@@ -53,6 +54,7 @@ function readMeta(id: string, data: Record<string, unknown>): SnapshotMeta | nul
     groupCount: num(data.groupCount) ?? 0,
     chunks,
     bytes: num(data.bytes) ?? 0,
+    ...(typeof data.content === 'string' ? { content: data.content } : {}),
   };
 }
 
@@ -89,7 +91,7 @@ export function createFirestoreSnapshotStore(uid: string): SnapshotStore {
     async write(meta, chunks) {
       const batch = writeBatch(db);
       const { id, ...fields } = meta;
-      batch.set(doc(metas, id), fields);
+      batch.set(doc(metas, id), withoutUndefined(fields));
       chunks.forEach((chunk, index) => batch.set(chunkDoc(id, index), { index, data: Bytes.fromUint8Array(chunk) }));
       await withTimeout(batch.commit());
     },

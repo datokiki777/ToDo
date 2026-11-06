@@ -1,10 +1,10 @@
 import { parseGroup, type Group } from '@/features/groups/model';
-import { parseNote, type Note } from '@/features/notes/model';
+import { isNoteEmpty, parseNote, type Note } from '@/features/notes/model';
 
 /** How many daily copies are kept. The oldest goes when a new one is written; age does not matter. */
 export const SNAPSHOT_KEEP = 30;
 /** The safety copies made just before a restore are kept apart, a few at a time. */
-export const BEFORE_RESTORE_KEEP = 5;
+export const BEFORE_RESTORE_KEEP = 10;
 /** Firestore documents are limited to 1 MiB, so a snapshot is split into pieces below that. */
 export const CHUNK_BYTES = 700_000;
 
@@ -21,6 +21,8 @@ export interface SnapshotMeta {
   groupCount: number;
   chunks: number;
   bytes: number;
+  /** A fingerprint of what the copy holds, ignoring when things were edited (see contentHash). */
+  content?: string;
 }
 
 export interface SnapshotData {
@@ -55,19 +57,46 @@ export function expiredSnapshots(
   return [...days.slice(keepDays), ...before.slice(keepBefore)];
 }
 
-/** A short fingerprint of "what the notes look like", to notice whether anything changed. */
-export function stateHash(notes: Note[], groups: Group[]): string {
-  const byId = (a: { id: string }, b: { id: string }) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
-  const text = JSON.stringify([
-    [...notes].sort(byId).map((n) => [n.id, n.updatedAt, n.deletedAt]),
-    [...groups].sort(byId).map((g) => [g.id, g.updatedAt, g.deletedAt]),
-  ]);
+function fnv(text: string): string {
   let hash = 0x811c9dc5;
   for (let i = 0; i < text.length; i += 1) {
     hash ^= text.charCodeAt(i);
     hash = Math.imul(hash, 0x01000193) >>> 0;
   }
   return hash.toString(16);
+}
+
+const byId = (a: { id: string }, b: { id: string }) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+
+/** A short fingerprint of "what the notes look like", to notice whether anything changed. */
+export function stateHash(notes: Note[], groups: Group[]): string {
+  return fnv(
+    JSON.stringify([
+      [...notes].sort(byId).map((n) => [n.id, n.updatedAt, n.deletedAt]),
+      [...groups].sort(byId).map((g) => [g.id, g.updatedAt, g.deletedAt]),
+    ]),
+  );
+}
+
+/**
+ * A fingerprint of what the notes SAY: texts, rows, ticks, days, colours, groups, which are in the trash.
+ * Unlike stateHash it ignores when things were edited, so a state that was restored from a copy has the
+ * same fingerprint as the copy itself. Blank notes (invisible drafts) are left out.
+ */
+export function contentHash(notes: Note[], groups: Group[]): string {
+  return fnv(
+    JSON.stringify([
+      [...notes]
+        .filter((n) => n.deletedAt !== null || !isNoteEmpty(n))
+        .sort(byId)
+        .map((n) => [
+          n.id, n.kind, n.title, n.body,
+          n.items.map((i) => [i.id, i.text, i.done, i.date ?? null]),
+          n.color, n.groupId ?? null, n.date ?? null, n.pinned, n.deletedAt !== null,
+        ]),
+      [...groups].sort(byId).map((g) => [g.id, g.name, g.icon, g.color, g.noteColor ?? null, g.deletedAt !== null]),
+    ]),
+  );
 }
 
 async function gzip(bytes: Uint8Array): Promise<Uint8Array> {

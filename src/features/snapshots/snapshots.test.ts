@@ -7,6 +7,7 @@ import { SyncEngine } from '@/features/sync/engine';
 import { FakeCloud } from '@/features/sync/testing/fakeCloud';
 import {
   BEFORE_RESTORE_KEEP,
+  contentHash,
   dateKey,
   decodeSnapshot,
   encodeSnapshot,
@@ -78,11 +79,11 @@ describe('days and keeping', () => {
 
   it('keeps the safety copies made before restores apart, a few at a time', () => {
     const days = Array.from({ length: 30 }, (_, i) => meta('day', dateKey(T0 + i * DAY), T0 + i * DAY));
-    const before = Array.from({ length: 8 }, (_, i) => meta('before-restore', dateKey(T0), T0 + i * 1000));
+    const before = Array.from({ length: 13 }, (_, i) => meta('before-restore', dateKey(T0), T0 + i * 1000));
     const doomed = expiredSnapshots([...days, ...before]);
-    expect(BEFORE_RESTORE_KEEP).toBe(5);
+    expect(BEFORE_RESTORE_KEEP).toBe(10);
     expect(doomed).toHaveLength(3);
-    expect(doomed.every((m) => m.kind === 'before-restore')).toBe(true);
+    expect(doomed.every((m) => m.kind === 'before-restore')).toBe(true); // never one of the 30 daily copies
     expect(Math.max(...doomed.map((m) => m.takenAt))).toBeLessThan(Math.min(...before.slice(3).map((m) => m.takenAt)));
   });
 });
@@ -322,7 +323,7 @@ describe('restoring the whole app', () => {
     time += HOUR;
     await svc.restore(before, 'whole');
     expect((await notes.get(ids.kept))?.body).toBe('ახალი ტექსტი');
-    expect(store.metas.size).toBeGreaterThanOrEqual(3);
+    expect(store.metas.size).toBe(2); // the day's copy and the one safety copy: undoing adds no duplicate
   });
 
   it('does nothing at all if the snapshot cannot be read', async () => {
@@ -466,5 +467,101 @@ describe('restoring one note from a backup, as a copy', () => {
     await notes.update(id, { groupId: group.id });
     const copy = await restoreAsCopy(db, (await db.notes.get(id))!, '(ასლი)', () => time);
     expect(copy.groupId).toBe(group.id);
+  });
+});
+
+describe('safety copies before a restore: only when something would be lost', () => {
+  async function setupRestore() {
+    const { db, notes } = setup();
+    const store = new FakeSnapshotStore();
+    const svc = new SnapshotService({ db, store, uid: 'u', now: () => time });
+    const id = await note(notes, 'ნოტა', 'ორიგინალი');
+    const snapshot = await svc.take('day');
+    return { db, notes, store, svc, id, snapshot };
+  }
+  const safetyCopies = (store: FakeSnapshotStore) => [...store.metas.values()].filter((m) => m.kind === 'before-restore');
+
+  it('restoring the same copy again and again keeps ONE safety copy, not one each time', async () => {
+    const { notes, store, svc, id, snapshot } = await setupRestore();
+    await notes.update(id, { body: 'შეცვლილი' });
+    for (let i = 0; i < 4; i += 1) {
+      time += 60_000;
+      await svc.restore(snapshot, 'whole');
+    }
+    expect((await notes.get(id))?.body).toBe('ორიგინალი');
+    expect(safetyCopies(store)).toHaveLength(1);
+    expect(await svc.load(safetyCopies(store)[0]!).then((d) => d.notes[0]?.body)).toBe('შეცვლილი'); // the real "before"
+  });
+
+  it('nothing is saved when the notes already say the same as the copy', async () => {
+    const { store, svc, snapshot } = await setupRestore();
+    time += 60_000;
+    await svc.restore(snapshot, 'whole');
+    expect(safetyCopies(store)).toHaveLength(0);
+  });
+
+  it('but a change made in between is saved, so it is never lost', async () => {
+    const { notes, store, svc, id, snapshot } = await setupRestore();
+    await notes.update(id, { body: 'ა' });
+    time += 60_000;
+    await svc.restore(snapshot, 'whole');
+    await notes.update(id, { body: 'ბ' }); // edited after the first restore
+    time += 60_000;
+    await svc.restore(snapshot, 'whole');
+    expect(safetyCopies(store)).toHaveLength(2);
+  });
+
+  it('the daily copies are never touched by restores, however many', async () => {
+    const { db, notes, store, svc, id } = await setupRestore();
+    const days: SnapshotMeta[] = [];
+    for (let d = 1; d <= 5; d += 1) {
+      time = T0 + d * DAY;
+      await notes.update(id, { body: `დღე ${d}` });
+      days.push(await svc.take('day'));
+    }
+    const before = [...store.metas.values()].filter((m) => m.kind === 'day').map((m) => m.id).sort();
+    for (let i = 0; i < 14; i += 1) {
+      time += 60_000;
+      await notes.update(id, { body: `შეცვლა ${i}` }); // something new every time, so every restore saves a copy
+      await svc.restore(days[i % 5]!, 'whole');
+    }
+    const after = [...store.metas.values()].filter((m) => m.kind === 'day').map((m) => m.id).sort();
+    expect(after).toEqual(before);
+    expect(safetyCopies(store)).toHaveLength(BEFORE_RESTORE_KEEP); // capped, oldest ones go
+    expect(await db.notes.count()).toBe(1);
+  });
+});
+
+describe('the fingerprint of what the notes say', () => {
+  it('ignores when things were edited, but sees every real change', async () => {
+    const { db, notes, groups } = setup();
+    const id = await note(notes, 'ა', 'ბ');
+    const same = async () => contentHash(await db.notes.toArray(), await groups.getAll());
+    const h1 = await same();
+    time += DAY;
+    await notes.update(id, { body: 'ბ' }); // touched, not changed
+    expect(await same()).toBe(h1);
+    await notes.update(id, { body: 'გ' });
+    expect(await same()).not.toBe(h1);
+    await notes.update(id, { body: 'ბ' });
+    expect(await same()).toBe(h1); // changed back: the same again
+    await notes.update(id, { pinned: true });
+    expect(await same()).not.toBe(h1);
+  });
+
+  it('sees a tick or a day on a checklist row, and a note going to the trash', async () => {
+    const { db, notes, groups } = setup();
+    const id = await note(notes, 'სია');
+    await notes.update(id, { kind: 'checklist', items: [{ id: 'r', text: 'x', done: false, date: '2026-11-03' }] });
+    const h = async () => contentHash(await db.notes.toArray(), await groups.getAll());
+    const base = await h();
+    await notes.update(id, { items: [{ id: 'r', text: 'x', done: true, date: '2026-11-03' }] });
+    expect(await h()).not.toBe(base);
+    await notes.update(id, { items: [{ id: 'r', text: 'x', done: false, date: '2026-11-04' }] });
+    expect(await h()).not.toBe(base);
+    await notes.update(id, { items: [{ id: 'r', text: 'x', done: false, date: '2026-11-03' }] });
+    expect(await h()).toBe(base);
+    await notes.moveToTrash(id);
+    expect(await h()).not.toBe(base);
   });
 });

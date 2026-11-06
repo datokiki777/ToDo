@@ -95,7 +95,10 @@ await backups(A).locator('button:has-text("ასლების ჩვენე
 await backups(A).locator('ul li').first().waitFor();
 const rows = await backups(A).locator('ul li').allInnerTexts();
 console.log('   list after restore:', JSON.stringify(rows.map((t) => t.replace(/\n+/g, ' | '))));
-ok('a "before restore" copy is listed', rows.some((t) => t.includes('აღდგენამდე')));
+ok('the daily list shows only the days, the safety copy is folded away', !rows.some((t) => t.includes('აღდგენამდე')) && rows.length >= 1);
+ok('a folded group "before restore" says there is one copy', (await backups(A).locator('button:has-text("აღდგენამდე ასლები (1)")').count()) === 1);
+await backups(A).locator('button:has-text("აღდგენამდე ასლები (1)")').click();
+ok('opening it shows the copy and explains it does not touch the daily ones', (await backups(A).innerText()).includes('დღიურ ასლებს არ ეხება'));
 await backups(A).locator('ul li', { hasText: 'აღდგენამდე' }).first().click();
 await A.page.locator('dialog[open]').locator('text=დაბრუნდება').waitFor();
 await A.page.locator('dialog[open] button:has-text("აპის აღდგენა")').click();

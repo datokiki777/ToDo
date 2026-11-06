@@ -252,7 +252,7 @@
     "returning": "Coming back: {{count}}",
     "changing": "Replaced by that day's text: {{count}}",
     "toTrash": "Made after that day, going to the trash: {{count}}",
-    "safety": "Before restoring, a copy of the present state is saved and shown in the list as “Before restore”. So a restore can be undone.",
+    "safety": "If the present state isn't saved anywhere yet, a copy of it is made before restoring (in the “Before restore” group). So a restore can be undone.",
     "restoreWhole": "Restore the app to that day",
     "restoreMissing": "Bring back only what's lost",
     "restoreMissingHint": "Leaves current notes alone: only what you no longer have, or what's in the trash, comes back.",
@@ -271,7 +271,9 @@
     "restoreCopy": "Restore as a copy",
     "copyLabel": "(from {{date}})",
     "copied": "Restored as a copy: {{title}}",
-    "openCopy": "Open"
+    "openCopy": "Open",
+    "beforeGroup": "Before-restore copies ({{count}})",
+    "beforeGroupHint": "These copies are made automatically before a restore, so a restore can be undone. They don't touch the daily copies: those are kept separately (the last 30). The last {{keep}} are kept here, and none is made if the state is already saved."
   },
   "calendar": {
     "title": "Calendar",

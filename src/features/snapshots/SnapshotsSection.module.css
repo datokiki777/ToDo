@@ -143,3 +143,22 @@
 .closeButton {
   margin-top: 6px;
 }
+
+/* The copies made automatically before a restore: kept apart, folded away, so they do not mix with the days. */
+.safety {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+.safetyToggle {
+  min-height: 44px;
+  padding: 0 4px;
+  color: var(--muted);
+  font-weight: 650;
+  text-align: left;
+}
+.safetyToggle[aria-expanded='true'] {
+  color: var(--ink);
+}

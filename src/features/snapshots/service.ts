@@ -2,6 +2,7 @@ import type { TodoDB } from '@/core/db/db';
 import type { Group } from '@/features/groups/model';
 import type { Note } from '@/features/notes/model';
 import {
+  contentHash,
   dateKey,
   decodeSnapshot,
   encodeSnapshot,
@@ -61,6 +62,7 @@ export class SnapshotService {
       groupCount: groups.filter((g) => g.deletedAt === null).length,
       chunks: chunks.length,
       bytes: chunks.reduce((sum, c) => sum + c.length, 0),
+      content: contentHash(notes, groups),
     };
     return { meta, chunks };
   }
@@ -145,12 +147,17 @@ export class SnapshotService {
   }
 
   /**
-   * Restores a copy. A copy of the present state is saved first, so the restore can itself be
-   * undone from the list.
+   * Restores a copy. A copy of the present state is saved first, so the restore can itself be undone
+   * from the list. But not when that state is already safe: if it says the same as the copy being
+   * restored, or as a copy that already exists, another one would only fill the list.
    */
   async restore(meta: SnapshotMeta, mode: 'whole' | 'missing'): Promise<RestoreResult> {
     const data = await this.load(meta); // fails before anything is touched if the copy is broken
-    await this.take('before-restore');
+    const now = await this.state();
+    const current = contentHash(now.notes, now.groups);
+    const safe =
+      current === contentHash(data.notes, data.groups) || (await this.store.list()).some((m) => m.content === current);
+    if (!safe) await this.take('before-restore');
     return mode === 'whole' ? restoreWhole(this.db, data, this.now) : restoreMissing(this.db, data, this.now);
   }
 }
