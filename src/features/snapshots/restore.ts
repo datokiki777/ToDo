@@ -1,6 +1,7 @@
 import type { TodoDB } from '@/core/db/db';
 import type { Group } from '@/features/groups/model';
-import { isNoteEmpty, type Note } from '@/features/notes/model';
+import { newId } from '@/core/id';
+import { displayTitle, isNoteEmpty, type Note } from '@/features/notes/model';
 import { textDiffers } from '@/features/sync/merge';
 import { noteKey } from '@/features/sync/keys';
 import type { SnapshotData } from './model';
@@ -116,3 +117,27 @@ export async function restoreMissing(db: TodoDB, snapshot: SnapshotData, now: ()
 }
 
 export type { Group };
+
+/**
+ * Puts one note from a snapshot back as a NEW note, next to whatever is there now: the note that exists
+ * today (even one changed beyond recognition) is not touched. The copy keeps its text, rows, ticks and
+ * days; `label` is added to its title so it can be told from the original.
+ */
+export async function restoreAsCopy(db: TodoDB, source: Note, label: string, now: () => number = Date.now): Promise<Note> {
+  const t = await restoreTime(db, now());
+  const group = source.groupId ? await db.groups.get(source.groupId) : undefined;
+  const name = displayTitle(source).trim();
+  const copy: Note = {
+    ...source,
+    id: newId(),
+    title: name === '' ? label : `${name} ${label}`,
+    groupId: group && group.deletedAt === null ? source.groupId : null,
+    pinned: false,
+    archived: false,
+    createdAt: t,
+    updatedAt: t,
+    deletedAt: null,
+  };
+  await db.notes.put(copy);
+  return copy;
+}

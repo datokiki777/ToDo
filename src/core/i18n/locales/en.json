@@ -96,7 +96,13 @@
     "dateClear": "Remove the date",
     "dateHelp": "Attach the note to a day: it shows on that day in the calendar (as a dot in the note's colour) and the card shows the date. It does not remind you of anything or change the note.",
     "dateHelpDaily": "This is a daily list: every row already has its own day, so this date is not needed.",
-    "datePickHint": "Tap to choose a day"
+    "datePickHint": "Tap to choose a day",
+    "converted": "Converted",
+    "convertTitle": "Turn it into text?",
+    "convertWarn": "The rows become plain text and the list is lost.",
+    "convertTicked": "Ticks: {{count}}.",
+    "convertDays": "Days of the daily list: {{count}}.",
+    "convertConfirm": "Convert"
   },
   "settings": {
     "title": "Settings",
@@ -259,7 +265,13 @@
     "errorBroken": "This backup is damaged and can't be read. Nothing was changed.",
     "errorOffline": "No connection.",
     "errorAuto": "The automatic backup couldn't be made ({{code}}). Try “Back up now”.",
-    "waiting": "{{count}} backup is waiting to be uploaded. It goes when the internet is back or when you open the app."
+    "waiting": "{{count}} backup is waiting to be uploaded. It goes when the internet is back or when you open the app.",
+    "hide": "Hide the list",
+    "notesInBackup": "Notes in this backup ({{count}})",
+    "restoreCopy": "Restore as a copy",
+    "copyLabel": "(from {{date}})",
+    "copied": "Restored as a copy: {{title}}",
+    "openCopy": "Open"
   },
   "calendar": {
     "title": "Calendar",

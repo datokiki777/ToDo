@@ -114,3 +114,14 @@ export function slideOffset(index: number, from: number, target: number, dragged
   if (target < from && index >= target && index < from) return draggedHeight;
   return 0;
 }
+
+/**
+ * What turning a checklist into plain text would throw away: the ticks and the days of daily rows
+ * (the words themselves are kept). Used to ask first, only when something really would be lost.
+ */
+export function conversionLoss(items: ChecklistItem[]): { ticked: number; days: number } {
+  return {
+    ticked: items.filter((item) => item.done && item.text.trim() !== '').length,
+    days: items.filter((item) => item.date).length,
+  };
+}

@@ -1,7 +1,9 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { db } from '@/core/db/db';
+import { checklistProgress } from '@/features/notes/model';
 import { formatDay, formatShortDate } from '@/core/time';
 import { ConfirmDialog } from '@/core/ui/ConfirmDialog';
 import { Sheet } from '@/core/ui/Sheet';
@@ -15,7 +17,8 @@ import {
   useSnapshots,
 } from './controller';
 import { SNAPSHOT_KEEP, SnapshotError, type SnapshotMeta } from './model';
-import { previewRestore, type RestorePreview } from './restore';
+import { displayTitle, isNoteEmpty, type Note } from '@/features/notes/model';
+import { previewRestore, restoreAsCopy, type RestorePreview } from './restore';
 import styles from './SnapshotsSection.module.css';
 
 function errorKey(error: unknown): { key: string; code: string } {
@@ -41,6 +44,9 @@ export function SnapshotsSection() {
   const [preview, setPreview] = useState<RestorePreview | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [inBackup, setInBackup] = useState<Note[]>([]);
+  const [showNotes, setShowNotes] = useState(false);
+  const navigate = useNavigate();
 
   const label = (meta: SnapshotMeta) =>
     meta.kind === 'before-restore'
@@ -80,9 +86,32 @@ export function SnapshotsSection() {
     try {
       const data = await loadSnapshot(meta);
       setPreview(previewRestore({ notes: await notesRepository.getAll() }, data));
+      setInBackup(data.notes.filter((n) => n.deletedAt === null && !isNoteEmpty(n)).sort((a, b) => b.updatedAt - a.updatedAt));
+      setShowNotes(false);
     } catch (error) {
       setOpen(null);
       setProblem(errorKey(error));
+    }
+  };
+
+  /** Puts one note of the backup back as a new note; the note as it is now stays as it is. */
+  const copyNote = async (source: Note) => {
+    if (!open) return;
+    setBusy(true);
+    try {
+      const day = formatDay(open.date, i18n.language);
+      const copy = await restoreAsCopy(db, source, t('snapshots.copyLabel', { date: day }));
+      setOpen(null);
+      showToast(t('snapshots.copied', { title: displayTitle(copy) }), {
+        durationMs: 10_000,
+        actionLabel: t('snapshots.openCopy'),
+        onAction: () => navigate(`/note/${copy.id}`),
+      });
+    } catch (error) {
+      setOpen(null);
+      setProblem(errorKey(error));
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -117,6 +146,11 @@ export function SnapshotsSection() {
         <button type="button" className={styles.button} disabled={!ready || loading} onClick={() => void refresh()}>
           {items ? t('snapshots.refresh') : t('snapshots.show')}
         </button>
+        {items && (
+          <button type="button" className={styles.button} onClick={() => setItems(null)}>
+            {t('snapshots.hide')}
+          </button>
+        )}
         <button type="button" className={styles.button} disabled={!ready || busy} onClick={() => void take()}>
           {t('snapshots.takeNow')}
         </button>
@@ -169,6 +203,31 @@ export function SnapshotsSection() {
               {t('snapshots.restoreMissing')}
             </button>
             <p className={styles.hint}>{t('snapshots.restoreMissingHint')}</p>
+
+            <button type="button" className={styles.button} aria-expanded={showNotes} onClick={() => setShowNotes((v) => !v)}>
+              {t('snapshots.notesInBackup', { count: inBackup.length })}
+            </button>
+            {showNotes && (
+              <ul className={styles.notesList}>
+                {inBackup.map((n) => {
+                  const progress = n.items.length > 0 ? checklistProgress(n) : null;
+                  return (
+                    <li key={n.id} className={styles.noteRow}>
+                      <span className={styles.noteName}>
+                        {displayTitle(n) || t('list.untitled')}
+                        {progress && <small> · {progress.done}/{progress.total}</small>}
+                      </span>
+                      <button type="button" className={styles.copyButton} disabled={busy} onClick={() => void copyNote(n)}>
+                        {t('snapshots.restoreCopy')}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <button type="button" className={`${styles.button} ${styles.closeButton}`} disabled={busy} onClick={() => setOpen(null)}>
+              {t('common.close')}
+            </button>
           </div>
         )}
       </Sheet>

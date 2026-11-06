@@ -16,7 +16,7 @@ import {
   type SnapshotData,
   type SnapshotMeta,
 } from './model';
-import { previewRestore } from './restore';
+import { previewRestore, restoreAsCopy } from './restore';
 import { SnapshotService } from './service';
 import { FakeSnapshotStore } from './testing/fakeSnapshotStore';
 
@@ -415,5 +415,56 @@ describe('restoring while synced', () => {
     }
     expect(a.engine.getStatus().pending).toBe(0);
     expect(b.engine.getStatus().pending).toBe(0);
+  });
+});
+
+describe('restoring one note from a backup, as a copy', () => {
+  it('brings back a daily list with its days and ticks, and leaves today\'s note alone', async () => {
+    const { db, notes } = setup();
+    const id = await note(notes, 'წამალი');
+    await notes.update(id, {
+      kind: 'checklist',
+      items: [
+        { id: 'r1', text: 'ორშ, 2 ნოემბერი', done: true, date: '2026-11-02' },
+        { id: 'r2', text: 'სამ, 3 ნოემბერი', done: false, date: '2026-11-03' },
+      ],
+    });
+    const lost = (await db.notes.get(id))!; // what the backup holds
+    // ...later the note is turned into plain text, losing the ticks and the days
+    await notes.update(id, { kind: 'text', body: 'ორშ, 2 ნოემბერი\nსამ, 3 ნოემბერი', items: [] });
+
+    time += DAY;
+    const copy = await restoreAsCopy(db, lost, '(ასლიდან 2 ნოე)', () => time);
+
+    expect(copy.id).not.toBe(id);
+    expect(copy.title).toBe('წამალი (ასლიდან 2 ნოე)');
+    expect(copy.items).toEqual(lost.items); // ticks and days are back
+    expect((await notes.get(id))?.items).toEqual([]); // the note as it is now is untouched
+    expect((await notes.get(id))?.body).toContain('ორშ');
+    expect(copy.deletedAt).toBeNull();
+    expect(copy.updatedAt).toBeGreaterThan((await notes.get(id))!.updatedAt);
+  });
+
+  it('a note with no title gets just the label, and a gone group is dropped', async () => {
+    const { db, notes, groups } = setup();
+    const group = await groups.create({ name: 'ჯგუფი' });
+    const id = await note(notes, '', 'ტექსტი');
+    await notes.update(id, { groupId: group.id, pinned: true });
+    const source = (await db.notes.get(id))!;
+    await groups.remove(group.id);
+
+    const copy = await restoreAsCopy(db, source, '(ასლიდან)', () => time);
+    expect(copy.title).toBe('ტექსტი (ასლიდან)');
+    expect(copy.groupId).toBeNull();
+    expect(copy.pinned).toBe(false);
+  });
+
+  it('keeps the group when it still exists', async () => {
+    const { db, notes, groups } = setup();
+    const group = await groups.create({ name: 'ჯგუფი' });
+    const id = await note(notes, 'ა', 'ბ');
+    await notes.update(id, { groupId: group.id });
+    const copy = await restoreAsCopy(db, (await db.notes.get(id))!, '(ასლი)', () => time);
+    expect(copy.groupId).toBe(group.id);
   });
 });

@@ -32,6 +32,7 @@ import { LinkList } from '../components/LinkList';
 import { textLinks } from '../links';
 import { ColorPicker } from '../components/ColorPicker';
 import { useNote } from '../hooks';
+import { conversionLoss } from '../checklist';
 import { isHabitNote } from '../habit';
 import {
   checklistToText,
@@ -167,7 +168,11 @@ function Editor({ note }: { note: Note }) {
   };
 
   /** Only when the note holds just one of the two: its words move into the other form. */
-  const convert = () => {
+  // Turning a checklist into text throws away ticks and days. Ask first, but only then, and always
+  // offer "undo": it puts everything back exactly as it was.
+  const [lossy, setLossy] = useState<{ ticked: number; days: number } | null>(null);
+  const doConvert = () => {
+    const before = { draft, sections };
     if (sections.text) {
       setDraft((d) => withBlankRow(textToChecklist(d), true));
       setSections({ text: false, list: true });
@@ -175,6 +180,20 @@ function Editor({ note }: { note: Note }) {
       setDraft((d) => checklistToText(d));
       setSections({ text: true, list: false });
     }
+    showToast(t('editor.converted'), {
+      actionLabel: t('common.undo'),
+      durationMs: 10_000,
+      onAction: () => {
+        setDraft(before.draft);
+        setSections(before.sections);
+      },
+    });
+  };
+  const convert = () => {
+    if (sections.text) return doConvert(); // text to checklist keeps everything
+    const loss = conversionLoss(draft.items);
+    if (loss.ticked > 0 || loss.days > 0) setLossy(loss);
+    else doConvert();
   };
 
   const setDate = (date: string | null) => void notesRepository.update(note.id, { date });
@@ -396,6 +415,23 @@ function Editor({ note }: { note: Note }) {
         onSave={createGroup}
       />
 
+      <ConfirmDialog
+        open={lossy !== null}
+        title={t('editor.convertTitle')}
+        message={[
+          t('editor.convertWarn'),
+          lossy && lossy.ticked > 0 ? t('editor.convertTicked', { count: lossy.ticked }) : '',
+          lossy && lossy.days > 0 ? t('editor.convertDays', { count: lossy.days }) : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        confirmLabel={t('editor.convertConfirm')}
+        onCancel={() => setLossy(null)}
+        onConfirm={() => {
+          setLossy(null);
+          doConvert();
+        }}
+      />
       <ConfirmDialog
         open={confirmDelete}
         title={t('trash.deleteForeverTitle')}

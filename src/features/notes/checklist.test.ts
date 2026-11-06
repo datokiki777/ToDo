@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyItemInput, doneCount, dropIndex, moveItem, recheck, reinsertRows, removeDone, slideOffset, uncheckAll } from './checklist';
+import { applyItemInput, conversionLoss, doneCount, dropIndex, moveItem, recheck, reinsertRows, removeDone, slideOffset, uncheckAll } from './checklist';
 import type { ChecklistItem } from './model';
 
 const items = (): ChecklistItem[] => [
@@ -151,5 +151,18 @@ describe('moving rows', () => {
     it('the dragged row itself is moved by the finger, not by this', () => {
       expect(slideOffset(1, 1, 3, 40)).toBe(0);
     });
+  });
+});
+
+describe('what turning a checklist into text would lose', () => {
+  const row = (text: string, done = false, date?: string): ChecklistItem => ({ id: text, text, done, ...(date ? { date } : {}) });
+  it('nothing for a plain, unticked list', () => {
+    expect(conversionLoss([row('a'), row('b')])).toEqual({ ticked: 0, days: 0 });
+  });
+  it('counts ticked rows and daily rows', () => {
+    expect(conversionLoss([row('a', true), row('b'), row('c', true, '2026-11-03'), row('d', false, '2026-11-04')])).toEqual({ ticked: 2, days: 2 });
+  });
+  it('a blank ticked row is not a loss', () => {
+    expect(conversionLoss([row('  ', true)])).toEqual({ ticked: 0, days: 0 });
   });
 });

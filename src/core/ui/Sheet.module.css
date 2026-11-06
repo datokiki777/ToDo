@@ -17,14 +17,24 @@
   background: rgb(0 0 0 / 0.5);
 }
 .inner {
-  padding: 8px 16px calc(20px + var(--safe-bottom));
+  padding: 0 16px calc(20px + var(--safe-bottom));
+}
+.inner > :nth-child(2) {
+  margin-top: 12px;
 }
 .head {
+  /* stays at the top while the sheet's content scrolls, so "close" is always reachable */
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
   min-height: 52px;
-  padding-left: 4px;
+  margin: 0 -16px;
+  padding: 0 12px 0 20px;
+  background: var(--surface);
+  box-shadow: 0 1px 0 var(--line);
 }
 .title {
   font-size: 1.125rem;
