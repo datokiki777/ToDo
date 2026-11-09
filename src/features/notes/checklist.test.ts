@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyItemInput, conversionLoss, doneCount, dropIndex, moveItem, recheck, reinsertRows, removeDone, slideOffset, uncheckAll } from './checklist';
+import { applyItemInput, conversionLoss, doneCount, itemStats, dropIndex, moveItem, recheck, reinsertRows, removeDone, slideOffset, uncheckAll } from './checklist';
 import type { ChecklistItem } from './model';
 
 const items = (): ChecklistItem[] => [
@@ -164,5 +164,18 @@ describe('what turning a checklist into text would lose', () => {
   });
   it('a blank ticked row is not a loss', () => {
     expect(conversionLoss([row('  ', true)])).toEqual({ ticked: 0, days: 0 });
+  });
+});
+
+describe('how many rows, how many ticked', () => {
+  const row = (text: string, done = false): ChecklistItem => ({ id: text + done, text, done });
+  it('counts the rows with words and the ticked ones', () => {
+    expect(itemStats([row('a', true), row('b'), row('c', true), row('d')])).toEqual({ done: 2, total: 4 });
+  });
+  it('a blank row waiting for typing is not counted, even if ticked', () => {
+    expect(itemStats([row('a'), row('  ', true), row('')])).toEqual({ done: 0, total: 1 });
+  });
+  it('an empty list has nothing', () => {
+    expect(itemStats([])).toEqual({ done: 0, total: 0 });
   });
 });

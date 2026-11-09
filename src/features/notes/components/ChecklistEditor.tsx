@@ -1,4 +1,4 @@
-import { Plus, X, RotateCcw, Trash2, GripVertical, CalendarPlus } from 'lucide-react';
+import { Plus, X, RotateCcw, Trash2, GripVertical, CalendarPlus, ArrowDownUp } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToasts } from '@/core/ui/toasts';
@@ -9,6 +9,7 @@ import {
   applyItemInput,
   doneCount,
   dropIndex,
+  itemStats,
   moveItem,
   recheck,
   reinsertRows,
@@ -241,7 +242,11 @@ export function ChecklistEditor({ items, onChange, readOnly }: Props) {
     }
   };
 
-  const canMove = !readOnly && items.length > 1;
+  // The grips are hidden until asked for (the arrows button in the bar below the list).
+  const [reorder, setReorder] = useState(false);
+  const stats = itemStats(items);
+  const canReorder = !readOnly && items.length > 1;
+  const canMove = canReorder && reorder;
   const rowStyle = (index: number): React.CSSProperties | undefined => {
     if (!drag) return undefined;
     if (index === drag.from) return { transform: `translateY(${drag.dy}px)`, transition: 'none' };
@@ -336,6 +341,37 @@ export function ChecklistEditor({ items, onChange, readOnly }: Props) {
           <Plus size={20} />
           {t('editor.addItem')}
         </button>
+      )}
+      {stats.total > 0 && (
+        <div className={styles.stats}>
+          <div
+            className={styles.statsMain}
+            role="group"
+            aria-label={t('checklist.statsLabel', { done: stats.done, total: stats.total })}
+          >
+            <div className={styles.statsLine}>
+              <strong className={stats.done === stats.total ? styles.allDone : undefined}>
+                {stats.done} / {stats.total}
+              </strong>
+              <span>{stats.done === stats.total ? t('checklist.allDone') : t('checklist.ticked')}</span>
+            </div>
+            <div className={styles.bar} aria-hidden="true">
+              <div className={styles.barFill} style={{ width: `${(stats.done / stats.total) * 100}%` }} />
+            </div>
+          </div>
+          {canReorder && (
+            <button
+              type="button"
+              className={`${styles.reorderButton} ${reorder ? styles.reorderOn : ''}`}
+              aria-pressed={reorder}
+              aria-label={t('checklist.reorder')}
+              title={reorder ? t('checklist.reorderOn') : t('checklist.reorder')}
+              onClick={() => setReorder((on) => !on)}
+            >
+              <ArrowDownUp size={20} aria-hidden="true" />
+            </button>
+          )}
+        </div>
       )}
       {extendable && (
         <div className={styles.bulk}>

@@ -318,7 +318,12 @@
     "clearedDone_other": "{{count}} items deleted",
     "untickedAll_one": "{{count}} item unticked",
     "untickedAll_other": "{{count}} items unticked",
-    "move": "Move: drag, or use the arrow keys"
+    "move": "Move: drag, or use the arrow keys",
+    "statsLabel": "{{done}} ticked out of {{total}}",
+    "ticked": "ticked",
+    "allDone": "all ticked",
+    "reorder": "Move rows: show the grips",
+    "reorderOn": "Moving is on: tap to hide the grips"
   },
   "diagnostics": {
     "open": "Diagnostics",

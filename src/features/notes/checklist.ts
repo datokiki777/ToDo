@@ -125,3 +125,9 @@ export function conversionLoss(items: ChecklistItem[]): { ticked: number; days: 
     days: items.filter((item) => item.date).length,
   };
 }
+
+/** How many rows there are and how many are ticked. Blank rows (the one waiting for typing) do not count. */
+export function itemStats(items: ChecklistItem[]): { done: number; total: number } {
+  const filled = items.filter((item) => item.text.trim() !== '');
+  return { done: filled.filter((item) => item.done).length, total: filled.length };
+}
